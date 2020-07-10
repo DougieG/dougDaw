@@ -1,0 +1,3423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>GridSound</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, user-scalable=no"/>
+<meta name="description" content="A free and Open-Source DAW (digital audio workstation)"/>
+<meta name="google" content="notranslate"/>
+<meta property="og:type" content="website"/>
+<meta property="og:title" content="GridSound"/>
+<meta property="og:url" content="https://gridsound.com/daw/"/>
+<meta property="og:image" content="https://gridsound.com/assets/og-image.jpg"/>
+<meta property="og:image:width" content="800"/>
+<meta property="og:image:height" content="400"/>
+<meta property="og:description" content="a free and open source DAW (digital audio workstation)"/>
+<meta name="theme-color" content="#3a5158"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="shortcut icon" href="../assets/favicon.png"/>
+<style>
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background-color: #222; }
+::-webkit-scrollbar-thumb { background-color: #ddd; }
+
+.no-select {
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+html,
+body {
+	height: 100%;
+	margin: 0;
+	overflow: hidden;
+	font-family: var( --font-default );
+	background-color: var( --app-bg );
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+.TextGlitch {
+	position: relative;
+	color: #ccc;
+	line-height: 1em;
+	font-size: 68px;
+	font-family: "oswald", monospace;
+}
+.TextGlitch-blended {
+	color: #fff;
+}
+
+.TextGlitch-clip {
+	position: relative;
+}
+.TextGlitch-clip + .TextGlitch-clip {
+	position: absolute;
+	top: 0;
+}
+.TextGlitch:not( .TextGlitch-blended ) .TextGlitch-clip + .TextGlitch-clip {
+	display: none;
+}
+
+.TextGlitch-word {
+	margin: 0;
+	white-space: nowrap;
+}
+
+.TextGlitch-blend {
+	position: absolute;
+	top: 0;
+	opacity: 0;
+	transition: .1s;
+	transition-property: opacity;
+}
+.TextGlitch-blendA {
+	color: #2af;
+	margin: -.03em 0 0 .03em;
+	mix-blend-mode: darken;
+}
+.TextGlitch-blendB {
+	color: #f64;
+	margin: .03em 0 0 -.03em;
+	mix-blend-mode: color-burn;
+}
+.TextGlitch-blended .TextGlitch-blend {
+	opacity: .4;
+}
+#loading {
+	display: flex;
+	z-index: 2147483647;
+	position: absolute;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	color: #fff8;
+	user-select: none;
+	-webkit-user-select: none;
+	background-color: #333;
+	transition: .5s opacity;
+}
+#loading.started {
+	pointer-events: none;
+	opacity: 0;
+}
+
+#loadingContent {
+	position: relative;
+	pointer-events: none;
+	text-align: center;
+}
+
+#loadingTitle {
+	position: relative;
+	font: 52px var( --font-oswald );
+}
+
+#loadingLoading,
+#loadingLoaded,
+#loadingStarting {
+	position: absolute;
+	left: 0;
+	width: 100%;
+	opacity: 0;
+}
+#loading.loaded:not( .starting ) #loadingLoaded {
+	animation: 1s loadingTextAnim linear infinite alternate;
+}
+#loading:not( .loaded ):not( .starting ) #loadingLoading,
+#loading.starting #loadingStarting {
+	opacity: 1;
+}
+#gsTitle {
+	margin-bottom: 16px;
+}
+
+@keyframes loadingTextAnim {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+:root {
+	--app-bg: #222;
+	--font-default: "Montserrat", sans-serif;
+	--font-monospace: "Inconsolata", "consolas", monospace;
+	--font-number: "Unica One", var( --font-monospace );
+	--font-oswald: "Oswald", sans-serif;
+	--pan-border: 1px solid #333;
+	--bpm-fontSize: 22px;
+
+	/* ...................................................................... */
+	--gsui-font: var( --font-default );
+	--gsui-font-number: var( --font-number );
+
+	/* ...................................................................... */
+	--head-bg: #444;
+	--head-gap: 4px;
+	--head-border: 0;
+	--head-heightA: 32px;
+	--head-heightB: 24px;
+	--head-hover-dur: .2s;
+	--head-winBtn-bg: #222;
+	--head-winBtn-open-bg: #ff9;
+
+	/* ...................................................................... */
+	--head-cmps-btn: #9dabd5;
+	--head-dropdown-shadow: 20px 10px #0006;
+
+	/* ...................................................................... */
+	--windowBtn-bg: #444;
+	--windowBtn-chan-color: #ce93d8;
+	--windowBtn-synth-color: #a5d6a7;
+	--windowBtn-newCmp-color: #ff9;
+	--windowBtn-pattern-color: #81d4fa;
+
+	/* ...................................................................... */
+	--ctrl-play-bg: #67a;
+	--ctrl-stop-bg: #888;
+	--ctrl-play-text: #ddd;
+	--ctrl-about-color: #ff9;
+	--ctrl-render-color: #ff9;
+	--ctrl-eatcookie-color: #ff9;
+	--ctrl-currentTime-color: #abd;
+	--ctrl-currentTime-bg: #0003;
+
+	/* gsuiMixer */
+	/* ...................................................................... */
+	--gsuiMixer-bg: initial;
+	--gsuiMixerChannel-bg: #555;
+	--gsuiMixerChannel-bg2: #5b5b5b;
+	--gsuiMixerChannel-color: #fff;
+	--gsuiMixerChannel-selected-bg: #666;
+	--gsuiMixerChannel-width: 52px;
+	--gsuiMixerChannel-pan-color: #d9f;
+	--gsuiMixerChannel-gain-color: #ff9;
+	--gsuiMixerChannel-connect-input-color: #f99;
+	--gsuiMixerChannel-connect-output-color: #ff9;
+	--gsuiMixerChannel-toggle-bg: #ffa;
+	--gsuiMixerChannel-toggleOff-bg: #fff2;
+	--gsuiMixerChannel-analyser-bg: #222;
+	--gsuiMixerChannel-name-font: var( --font-default );
+
+	/* gsuiTrack */
+	/* ...................................................................... */
+	--gsuiTrack-hsl-h: 0;
+	--gsuiTrack-hsl-s: 0%;
+	--gsuiTrack-hsl-l: 33%;
+	--gsuiTrack-color: #fff;
+	--gsuiTrack-toggle-bg: #ffa;
+	--gsuiTrack-toggleOff-bg: #fff3;
+
+	/* gsuiBlocksManager */
+	/* ...................................................................... */
+	--gsuiBlocksManager-grid-bg: #456168;
+	--gsuiBlocksManager-side-bgColor: #555;
+	--gsuiBlocksManager-font: 12px var( --font-default );
+	--gsuiBlocksManager-number-font: 16px var( --font-number );
+	--gsuiBlocksManager-selection-bgColor: #b226;
+	--gsuiBlocksManager-selection-borderColor: #f44;
+	--gsuiBlocksManager-blockColor: #5acc;
+	--gsuiBlocksManager-blockSelectedColor: #f88c;
+
+	/* gsuiSlider */
+	/* ...................................................................... */
+	--gsuiSlider-lineRadius: 2px;
+
+	/* gsuiSliderGroup */
+	/* ...................................................................... */
+	--gsuiSliderGroup-bg: #456168;
+	--gsuiSliderGroup-currentTime-color: #ff9;
+	--gsuiSliderGroup-slider-width: 6px;
+	--gsuiSliderGroup-slider-bg: #0002;
+	--gsuiSliderGroup-slider-color: var( --gsuiBlocksManager-blockColor );
+	--gsuiSliderGroup-slider-color-selected: var( --gsuiBlocksManager-blockSelectedColor );
+	--gsuiSliderGroup-loop-color: #0004;
+
+	/* cmp */
+	/* ...................................................................... */
+	--cmp-cloud-bg: #4c71af;
+	--cmp-local-bg: #67a;
+	--cmp-text: #fff;
+	--cmp-height: 42px;
+	--cmp-text-size: 18px;
+	--cmp-save-bg: #ba5d5d;
+
+	/* history */
+	/* ...................................................................... */
+	--history-action-bg: #454750;
+	--history-action-text: #ddd;
+	--history-actionlight-bg: #67a;
+	--history-actionlightoff-bg: #1a1a1a;
+}
+
+#app .gsuiSynthesizer {
+	--gsuiSynthesizer-bg: initial;
+}
+#app {
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	overflow: hidden;
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+}
+
+#body {
+	flex: 1;
+	background-color: var( --app-bg );
+	background-image: url( "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='304' height='304' viewBox='0 0 304 304'%3E%3Cpath fill='%23000000' fill-opacity='0.2' d='M44.1 224a5 5 0 1 1 0 2H0v-2h44.1zm160 48a5 5 0 1 1 0 2H82v-2h122.1zm57.8-46a5 5 0 1 1 0-2H304v2h-42.1zm0 16a5 5 0 1 1 0-2H304v2h-42.1zm6.2-114a5 5 0 1 1 0 2h-86.2a5 5 0 1 1 0-2h86.2zm-256-48a5 5 0 1 1 0 2H0v-2h12.1zm185.8 34a5 5 0 1 1 0-2h86.2a5 5 0 1 1 0 2h-86.2zM258 12.1a5 5 0 1 1-2 0V0h2v12.1zm-64 208a5 5 0 1 1-2 0v-54.2a5 5 0 1 1 2 0v54.2zm48-198.2V80h62v2h-64V21.9a5 5 0 1 1 2 0zm16 16V64h46v2h-48V37.9a5 5 0 1 1 2 0zm-128 96V208h16v12.1a5 5 0 1 1-2 0V210h-16v-76.1a5 5 0 1 1 2 0zm-5.9-21.9a5 5 0 1 1 0 2H114v48H85.9a5 5 0 1 1 0-2H112v-48h12.1zm-6.2 130a5 5 0 1 1 0-2H176v-74.1a5 5 0 1 1 2 0V242h-60.1zm-16-64a5 5 0 1 1 0-2H114v48h10.1a5 5 0 1 1 0 2H112v-48h-10.1zM66 284.1a5 5 0 1 1-2 0V274H50v30h-2v-32h18v12.1zM236.1 176a5 5 0 1 1 0 2H226v94h48v32h-2v-30h-48v-98h12.1zm25.8-30a5 5 0 1 1 0-2H274v44.1a5 5 0 1 1-2 0V146h-10.1zm-64 96a5 5 0 1 1 0-2H208v-80h16v-14h-42.1a5 5 0 1 1 0-2H226v18h-16v80h-12.1zm86.2-210a5 5 0 1 1 0 2H272V0h2v32h10.1zM98 101.9V146H53.9a5 5 0 1 1 0-2H96v-42.1a5 5 0 1 1 2 0zM53.9 34a5 5 0 1 1 0-2H80V0h2v34H53.9zm60.1 3.9V66H82v64H69.9a5 5 0 1 1 0-2H80V64h32V37.9a5 5 0 1 1 2 0zM101.9 82a5 5 0 1 1 0-2H128V37.9a5 5 0 1 1 2 0V82h-28.1zm16-64a5 5 0 1 1 0-2H146v44.1a5 5 0 1 1-2 0V18h-26.1zm102.2 270a5 5 0 1 1 0 2H98v14h-2v-16h124.1zM242 149.9V160h16v34h-16v62h48v48h-2v-46h-48v-66h16v-30h-16v-12.1a5 5 0 1 1 2 0zM53.9 18a5 5 0 1 1 0-2H64V2H48V0h18v18H53.9zm112 32a5 5 0 1 1 0-2H192V0h50v2h-48v48h-28.1zm-48-48a5 5 0 0 1-9.8-2h2.07a3 3 0 1 0 5.66 0H178v34h-18V21.9a5 5 0 1 1 2 0V32h14V2h-58.1zm0 96a5 5 0 1 1 0-2H137l32-32h39V21.9a5 5 0 1 1 2 0V66h-40.17l-32 32H117.9zm28.1 90.1a5 5 0 1 1-2 0v-76.51L175.59 80H224V21.9a5 5 0 1 1 2 0V82h-49.59L146 112.41v75.69zm16 32a5 5 0 1 1-2 0v-99.51L184.59 96H300.1a5 5 0 0 1 3.9-3.9v2.07a3 3 0 0 0 0 5.66v2.07a5 5 0 0 1-3.9-3.9H185.41L162 121.41v98.69zm-144-64a5 5 0 1 1-2 0v-3.51l48-48V48h32V0h2v50H66v55.41l-48 48v2.69zM50 53.9v43.51l-48 48V208h26.1a5 5 0 1 1 0 2H0v-65.41l48-48V53.9a5 5 0 1 1 2 0zm-16 16V89.41l-34 34v-2.82l32-32V69.9a5 5 0 1 1 2 0zM12.1 32a5 5 0 1 1 0 2H9.41L0 43.41V40.6L8.59 32h3.51zm265.8 18a5 5 0 1 1 0-2h18.69l7.41-7.41v2.82L297.41 50H277.9zm-16 160a5 5 0 1 1 0-2H288v-71.41l16-16v2.82l-14 14V210h-28.1zm-208 32a5 5 0 1 1 0-2H64v-22.59L40.59 194H21.9a5 5 0 1 1 0-2H41.41L66 216.59V242H53.9zm150.2 14a5 5 0 1 1 0 2H96v-56.6L56.6 162H37.9a5 5 0 1 1 0-2h19.5L98 200.6V256h106.1zm-150.2 2a5 5 0 1 1 0-2H80v-46.59L48.59 178H21.9a5 5 0 1 1 0-2H49.41L82 208.59V258H53.9zM34 39.8v1.61L9.41 66H0v-2h8.59L32 40.59V0h2v39.8zM2 300.1a5 5 0 0 1 3.9 3.9H3.83A3 3 0 0 0 0 302.17V256h18v48h-2v-46H2v42.1zM34 241v63h-2v-62H0v-2h34v1zM17 18H0v-2h16V0h2v18h-1zm273-2h14v2h-16V0h2v16zm-32 273v15h-2v-14h-14v14h-2v-16h18v1zM0 92.1A5.02 5.02 0 0 1 6 97a5 5 0 0 1-6 4.9v-2.07a3 3 0 1 0 0-5.66V92.1zM80 272h2v32h-2v-32zm37.9 32h-2.07a3 3 0 0 0-5.66 0h-2.07a5 5 0 0 1 9.8 0zM5.9 0A5.02 5.02 0 0 1 0 5.9V3.83A3 3 0 0 0 3.83 0H5.9zm294.2 0h2.07A3 3 0 0 0 304 3.83V5.9a5 5 0 0 1-3.9-5.9zm3.9 300.1v2.07a3 3 0 0 0-1.83 1.83h-2.07a5 5 0 0 1 3.9-3.9zM97 100a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-48 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 48a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 96a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-144a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-96 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm96 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-32 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM49 36a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-32 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM33 68a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-48a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 240a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm80-176a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 48a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm112 176a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 180a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 84a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'%3E%3C/path%3E%3C/svg%3E" );
+	background-attachment: local;
+	--gsuiWindows-overflow: auto;
+}
+#head {
+	position: relative;
+	display: grid;
+	z-index: 1000; /* 1. */
+	color: #ddd;
+	font-size: 16px;
+	padding: var( --head-gap );
+	grid-gap: var( --head-gap );
+	grid-template:
+		"header ctrlA       ctrlB       .   headHelp  " var( --head-heightA )
+		"cmp    currentTime winBtns     .   headVersion" var( --head-heightB )
+		/260px  min-content min-content 1fr min-content;
+	background-color: var( --head-bg );
+	border-bottom: var( --head-border );
+}
+
+/* .......................................................................... */
+a.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+.btn {
+	border: 0;
+	padding: 0;
+	outline: 0;
+	color: inherit;
+	cursor: pointer;
+	font-size: inherit;
+	border-radius: 4px;
+	background: none;
+	transition: var( --head-hover-dur );
+	transition-property: color, opacity, background-color;
+	user-select: none;
+}
+.btn:not( .gsuiIcon ) {
+	font-family: inherit;
+}
+.btnMarge + .btnMarge {
+	margin-left: var( --head-gap );
+}
+.btn:focus {
+	z-index: 1;
+	position: relative;
+	box-shadow: 0 0 1px 2px #69b;
+}
+.btn.gsuiIcon:focus,
+.btn.gsuiIcon:hover {
+	color: #fff;
+}
+.btnBg {
+	background-color: #ffffff1a;
+}
+.btnBg:focus,
+.btnBg:hover {
+	background-color: #fff3;
+}
+.btnLarge {
+	width: var( --head-heightA );
+	min-width: var( --head-heightA );
+}
+.btnIconLarge {
+	font-size: calc( var( --head-heightA ) - 8px );
+}
+
+/* .......................................................................... */
+.btnGroup .btn:first-of-type {
+	border-top-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+}
+.btnGroup .btn:last-of-type {
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+}
+.btnGroup .btn {
+	margin-left: 0;
+	border-radius: 0;
+	transition: color var( --head-hover-dur );
+}
+.btnGroup .btn:hover {
+	color: #fff;
+}
+
+/* .......................................................................... */
+#header {
+	grid-area: header;
+	display: flex;
+}
+#title {
+	align-self: center;
+	font-size: 28px;
+	font-family: var( --font-oswald );
+	margin-right: 4px;
+}
+#title::before {
+	content: attr( data-text );
+}
+#headUser {
+	border: 2px solid #222;
+	box-sizing: border-box;
+	margin-left: var( --head-gap );
+	background-size: cover;
+	background-color: rgba( 255, 255, 255, .3 );
+}
+#app.logged #login,
+#app:not( .logged ) #logout,
+#app:not( .logged ) #headUser {
+	display: none;
+}
+#login,
+#logout {
+	margin-left: 4px;
+	opacity: .7;
+}
+
+/* .......................................................................... */
+#cmpsBtn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	margin-left: 4px;
+	color: var( --head-cmps-btn );
+}
+#cmpsBtn .gsuiIcon[ data-icon="plus" ] {
+	margin-left: 4px;
+	font-size: 14px;
+}
+#cmpsBtn:focus,
+#cmpsBtn:hover {
+	color: var( --head-bg );
+	background-color: var( --head-cmps-btn );
+}
+
+/* .......................................................................... */
+#headCmp {
+	grid-area: cmp;
+	display: flex;
+	overflow: hidden;
+	border-radius: 4px;
+	line-height: var( --head-heightB );
+	background-color: var( --cmp-local-bg );
+}
+#headCmpSave {
+	border-radius: 0;
+}
+#headCmpInfo {
+	flex: 1;
+	display: flex;
+	overflow: hidden;
+	align-items: center;
+	padding: 0 4px;
+	font-size: 14px;
+}
+#headCmpName {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	text-align: left;
+	padding-right: .4ch;
+}
+#headCmpIcon {
+	display: none;
+	margin-right: .3em;
+}
+#headCmp.cmp-saved #headCmpIcon {
+	display: inline-block;
+}
+#headCmp:not( .cmp-saved ) #headCmpName::before {
+	content: "*";
+}
+#headCmpName:empty::after {
+	content: "Untitled";
+	font-style: italic;
+	padding-right: 1px;
+	opacity: .8;
+}
+#headCmpHover {
+	width: 0;
+	display: inline-block;
+	overflow: hidden;
+	position: relative;
+	transition: .1s;
+	transition-property: width, margin-left;
+}
+#headCmpInfo:focus #headCmpHover,
+#headCmpInfo:hover #headCmpHover {
+	width: 1.4ch;
+	margin-left: 4px;
+}
+#headCmpDur::before {
+	content: "·";
+	margin: 4px;
+}
+
+/* .......................................................................... */
+#headGain {
+	width: 6px;
+	--gsuiSlider-lineRadius: 4px;
+	--gsuiSlider-lineColor: var( --ctrl-play-bg );
+	--gsuiSlider-lineBgColor: #222;
+}
+#headGain .gsuiSlider-eventCatcher {
+	left: -12px;
+	right: -4px;
+}
+
+/* .......................................................................... */
+#headCurrentTime {
+	grid-area: currentTime;
+	padding: 10px;
+	border-radius: 4px;
+	background-color: var( --ctrl-currentTime-bg );
+	--gsuiSlider-lineColor: var( --ctrl-currentTime-color );
+	--gsuiSlider-lineBgColor: #222;
+}
+#headCurrentTime .gsuiSlider-eventCatcher {
+	top: -10px;
+	left: -10px;
+	right: -10px;
+	bottom: -10px;
+}
+
+/* .......................................................................... */
+#ctrlA {
+	grid-area: ctrlA;
+	display: flex;
+}
+
+/* .......................................................................... */
+#headPlay {
+	display: flex;
+}
+.playBtn {
+	background-color: var( --ctrl-play-bg );
+}
+#playToggle {
+	padding: 6px 5px 6px 7px;
+	display: flex;
+	overflow: hidden;
+	align-items: center;
+	flex-direction: column;
+	justify-content: space-between;
+}
+#playToggle span {
+	width: 8px;
+	height: 8px;
+	box-sizing: border-box;
+	border: 2px solid;
+	border-radius: 2px;
+}
+#playToggle[ data-dir="up" ] span:first-child,
+#playToggle[ data-dir="down" ] span:last-child {
+	background-color: currentColor;
+}
+#stop {
+	margin-left: -3px;
+}
+
+/* .......................................................................... */
+#headTempo {
+	display: flex;
+	align-items: center;
+	white-space: nowrap;
+	background-color: #222;
+}
+#timeSignature {
+	display: flex;
+	align-items: center;
+	flex-direction: column;
+	justify-content: space-between;
+	height: 40%;
+	padding: 0 6px 0 8px;
+	font-size: 14px;
+	line-height: 0;
+	font-family: var( --font-number );
+}
+#bpm {
+	display: flex;
+	align-items: baseline;
+	padding-right: 7px;
+	font-size: var( --bpm-fontSize );
+	font-family: var( --font-number );
+}
+#bpm::after {
+	content: "bpm";
+	margin-left: 2px;
+	font-size: 14px;
+	opacity: .5;
+}
+
+/* .......................................................................... */
+#ctrlB {
+	grid-area: ctrlB;
+	display: flex;
+}
+
+/* .......................................................................... */
+#headHist {
+	display: inline-flex;
+	user-select: none;
+}
+#headHist .btn {
+	background-color: #777;
+}
+#redo {
+	margin-left: -4px;
+}
+#undoMore {
+	padding: 0 6px 0 3px;
+}
+
+/* .......................................................................... */
+#headAnalyser {
+	width: 140px;
+	border-radius: 4px;
+	background-color: #000;
+	filter: saturate( .5 ) contrast( .76 );
+}
+
+/* .......................................................................... */
+#headExport {
+	color: var( --ctrl-render-color );
+}
+
+/* .......................................................................... */
+#winBtns {
+	grid-area: winBtns;
+	display: flex;
+	white-space: nowrap;
+}
+.winBtn {
+	padding: 2px 6px;
+	font-size: 12px;
+	font-weight: bold;
+	border-radius: 0;
+	background-color: var( --head-winBtn-bg );
+	transition: var( --head-hover-dur );
+	transition-property: color, background-color, box-shadow;
+}
+.winBtn:first-child {
+	border-top-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+}
+.winBtn:last-child {
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+}
+.winBtn + .winBtn {
+	margin-left: 0;
+	border-left: 1px dashed rgba( 0, 0, 0, .2 );
+}
+.winBtn-open {
+	color: var( --head-bg );
+	background-color: var( --head-winBtn-open-bg );
+}
+.winBtn::before {
+	content: attr( data-text );
+}
+
+/* .......................................................................... */
+#headHelp {
+	grid-area: headHelp;
+	display: flex;
+}
+#cookies {
+	animation: infinite cookie-anim 5s;
+}
+#helpAbout {
+	color: var( --ctrl-about-color );
+}
+
+@keyframes cookie-anim {
+	30% { box-shadow: none; }
+	35% { box-shadow: 0 0 0 3px var( --ctrl-eatcookie-color ); }
+	100% { box-shadow: 0 0 0 3px transparent; }
+}
+
+/* .......................................................................... */
+#headVersion {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	grid-area: headVersion;
+	user-select: none;
+}
+#headVersionBtn {
+	display: flex;
+	align-items: center;
+	border: 0;
+	padding: 0;
+	outline: 0;
+	border-radius: 4px;
+	font-size: 18px;
+	color: inherit;
+	cursor: pointer;
+	opacity: .3;
+	background: none;
+	transition: opacity var( --head-hover-dur );
+}
+#headVersionBtn:focus {
+	box-shadow: 0 0 1px 2px #69b;
+}
+#headVersionBtn:focus,
+#headVersionBtn:hover {
+	opacity: 1;
+}
+#headVersionNum {
+	margin-left: 6px;
+	font-family: var( --font-number );
+}
+
+/*
+	1. z-index: 1000 to be on top on all the windows possible.
+*/
+#cmps {
+	left: var( --head-gap );
+	width: 480px;
+	grid-template-columns: 1fr 1fr;
+	box-shadow: 12px var( --head-dropdown-shadow );
+}
+
+#cmps .windowBtn {
+	color: var( --windowBtn-newCmp-color );
+	margin-left: 8px;
+}
+
+#cmpsCloudList {
+	border-left: 1px solid #444;
+}
+
+#app:not( .logged ) #cmpsCloudList .placeholder span:first-child,
+#app.logged         #cmpsCloudList .placeholder span:last-child {
+	display: none;
+}
+#app:not( .logged ) #cloudNewCmp {
+	color: #888;
+}
+.popup {
+	width: 500px;
+}
+
+/* .popup *content* --------------------------------------------------------- */
+.popup fieldset {
+	border: 2px solid #444;
+	border-radius: 4px;
+	margin-bottom: 10px;
+}
+
+.popup legend {
+	font-size: 12px;
+	opacity: .5;
+}
+
+.popup a {
+	color: #bbf;
+}
+
+.popup-error-msg {
+	margin-top: 12px;
+	font-size: 12px;
+	color: #ed9a8b;
+}
+.popup-error-msg:empty {
+	display: none;
+}
+
+.popup .param {
+	display: flex;
+	align-items: center;
+	font-size: 14px;
+}
+.popup .param + .param {
+	margin-top: 6px;
+}
+
+.popup .param-title {
+	flex: 1;
+}
+.popup .param-values {
+	display: flex;
+	align-items: center;
+	font-family: var( --font-monospace );
+}
+.popup .param-column {
+	flex-direction: column;
+}
+
+.popup label {
+	display: flex;
+	align-items: center;
+}
+.popup input[ type="radio" ]:checked + label {
+	font-weight: bold;
+}
+
+.popup input,
+.popup button {
+	border-radius: 2px;
+	border: 0;
+	color: inherit;
+	font-size: inherit;
+}
+.popup input::placeholder {
+	color: #aaa;
+	font-style: italic;
+}
+.popup input[ type="radio" ],
+.popup input[ type="checkbox" ] {
+	margin-right: 8px;
+	transform: scale( 1.5 );
+}
+.popup input[ type="range" ] {
+	min-width: 0;
+}
+
+.popup input[ type="password" ],
+.popup input[ type="number" ],
+.popup input[ type="text" ],
+.popup input[ type="url" ],
+.popup input[ type="file" ] {
+	width: 180px;
+	height: 32px;
+	padding: 0 8px;
+	box-sizing: border-box;
+	font-family: inherit;
+	background-color: rgba( 255, 255, 255, .1 );
+}
+.popup input[ type="file" ] {
+	width: 200px;
+	height: auto;
+	padding-top: 6px;
+	padding-bottom: 6px;
+}
+
+/* #authPopupContent -------------------------------------------------------- */
+#authPopupContent {
+	width: 340px;
+}
+#authPopupContent a {
+	font-size: 12px;
+}
+
+/* #selectChanPopupContent ---------------------------------------------------- */
+#selectChanPopupContent,
+#gsuiPatterns-selectChanPopupContent {
+	width: auto;
+}
+#selectChanPopupSelect,
+#gsuiPatterns-selectChanPopupSelect {
+	width: 100%;
+	color: inherit;
+	background-color: transparent;
+}
+#selectChanPopupSelect option,
+#gsuiPatterns-selectChanPopupSelect option {
+	padding: 4px;
+}
+
+/* #tempoPopupContent ---------------------------------------------------- */
+#tempoPopupContent {
+	width: 400px;
+}
+#tempoBPM {
+	width: calc( 180px - 6px - 32px );
+}
+#tempoBPMTap {
+	display: flex;
+	align-self: normal;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	color: inherit;
+	width: 32px;
+	font-size: 18px;
+	margin-left: 6px;
+	border-radius: 2px;
+	background-color: rgba( 255, 255, 255, .1 );
+}
+#tempoBPMTap:hover {
+	background-color: rgba( 255, 255, 255, .2 );
+}
+
+/* #shortcutsPopupContent --------------------------------------------------- */
+#shortcutsPopupContent .param {
+	padding: 4px;
+}
+#shortcutsPopupContent .param:nth-child( even ) {
+	background-color: rgba( 255, 255, 255, .05 );
+}
+
+#shortcutsPopupContent .param-title {
+	font-size: 13px;
+}
+
+#shortcutsPopupContent .shortcuts {
+	display: inline-block;
+	position: relative;
+	border-radius: 4px;
+	border-bottom: 3px solid #333;
+	padding: 4px 6px;
+	color: #fff;
+	white-space: nowrap;
+	background-color: #444;
+}
+#shortcutsPopupContent .shortcuts-sep {
+	margin: 0 8px;
+	font-size: 10px;
+}
+#shortcutsPopupContent .shortcuts .icon {
+	width: auto;
+}
+
+/* #renderPopupContent ------------------------------------------------------- */
+#renderWrap {
+	display: flex;
+	padding: 10px 0;
+}
+#renderProgress {
+	flex: 1;
+	height: 28px;
+}
+#renderBtn {
+	padding: 0 .8em;
+	border-radius: 2px;
+	margin-right: 10px;
+	color: #111;
+	font-size: 12px;
+	line-height: 28px;
+	font-weight: bold;
+	background-color: #ff9;
+}
+#renderBtn > span { display: none; }
+#renderBtn[ data-status="0" ] #renderBtn0 { display: inline; }
+#renderBtn[ data-status="1" ] #renderBtn1 { display: inline; }
+#renderBtn[ data-status="2" ] #renderBtn2 { display: inline; }
+#renderBtn .gsuiIcon {
+	margin-left: .3em;
+}
+
+/* #settingsPopupContent ---------------------------------------------------- */
+#settingsPopupContent {
+	width: 400px;
+}
+#settingsPopupContent .param-values {
+	width: 200px;
+}
+.settingsPopupFps {
+	font-size: 16px;
+}
+.settingsPopupFps::after {
+	content: " fps";
+	font-family: var( --font-default );
+	font-size: 12px;
+	opacity: .6;
+}
+#settingsUIRateManual {
+	flex: 1;
+	margin-left: 8px;
+}
+
+/* #aboutPopupContent ------------------------------------------------------- */
+#aboutPopupContent {
+	width: 450px;
+	text-align: center;
+}
+#aboutPopupContent > div {
+	margin-bottom: 16px;
+}
+
+#aboutPopupContent .title {
+	display: flex;
+	align-items: baseline;
+	justify-content: center;
+}
+#aboutPopupContent .title > span:first-child {
+	margin-right: 4px;
+	font: 32px var( --font-oswald );
+}
+
+#aboutPopupContent a {
+	color: #ccf;
+	font-weight: bold;
+}
+
+#aboutPopupContent .social-network {
+	display: flex;
+}
+
+#aboutPopupContent .social-network a {
+	flex: 1;
+	padding: 20px 0;
+	color: #fff;
+	font-size: 36px;
+	font-weight: normal;
+	opacity: .5;
+	transition: .4s;
+	transition-property: opacity;
+}
+#aboutPopupContent .social-network a:hover {
+	opacity: 1;
+}
+#aboutPopupContent .social-network a:hover::before {
+	top: -4px;
+	left: 4px;
+	text-shadow: -4px 4px 2px rgba( 0, 0, 0, .2 );
+}
+#aboutPopupContent .social-network a::before {
+	position: relative;
+	top: 0;
+	left: 0;
+	transition: .2s;
+	transition-property: top, left, text-shadow;
+}
+#aboutPopupContent .social-network:hover a:not( :hover ) {
+	opacity: .3;
+}
+.gsuiWindow[ data-window-id="mixer" ] .gsuiWindow-content {
+	overflow-y: hidden;
+}
+
+/* .......................................................................... */
+.windowBetaMsg {
+	color: #fff;
+	padding: 8px;
+	font-size: 11px;
+	font-weight: bold;
+	background-color: #ba5d5d;
+}
+
+/* .......................................................................... */
+.windowBtn {
+	height: 20px;
+	padding: 0 8px;
+	max-width: 110px;
+	border: 0;
+	outline: 0;
+	cursor: pointer;
+	overflow: hidden;
+	border-radius: 3px;
+	line-height: 1;
+	color: inherit;
+	font-size: 12px;
+	font-weight: bold;
+	font-family: inherit;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	background-color: var( --windowBtn-bg );
+	transition: filter .2s;
+}
+.windowBtn:focus,
+.windowBtn:hover {
+	filter: brightness( 1.1 );
+}
+
+.windowBtnIcon,
+.windowBtnText {
+	pointer-events: none;
+}
+
+.windowBtnIcon + .windowBtnText {
+	margin-left: 4px;
+}
+
+.windowDataBtn:empty::before {
+	content: "Untitled";
+	font-style: italic;
+}
+#channelName,
+#synthChannelBtn { color: var( --windowBtn-chan-color ); }
+#drumsNew,
+#drumsName,
+#pianorollName { color: var( --windowBtn-pattern-color ); }
+#synthName { color: var( --windowBtn-synth-color ); }
+#synthChanName {
+	margin: 0;
+	padding-right: 4px;
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+/* .......................................................................... */
+#synthDestArrow {
+	margin: 0 6px;
+	pointer-events: none;
+}
+
+/* .......................................................................... */
+.gsuiDrums,
+.gsuiPianoroll,
+.gsuiPatternroll,
+.gsuiSynthesizer {
+	height: 100%;
+	outline: 0;
+}
+
+/* .......................................................................... */
+.gsuiBeatlines {
+	transition: filter .2s;
+}
+.gsuiBlocksManager:not( .selected ) .gsuiBeatlines {
+	filter: brightness( .9 );
+}
+.cmp {
+	box-sizing: border-box;
+	display: flex;
+	color: var( --cmp-text );
+	height: var( --cmp-height );
+	font-size: var( --cmp-text-size );
+	line-height: var( --cmp-height );
+	background-color: var( --cmp-bg );
+	filter: brightness( .9 );
+}
+#cmpsLocalList .cmp { --cmp-bg: var( --cmp-local-bg ); }
+#cmpsCloudList .cmp { --cmp-bg: var( --cmp-cloud-bg ); }
+.cmp:nth-child( odd ) {
+	filter: brightness( .85 );
+}
+.cmp.cmp-loaded {
+	filter: none;
+}
+.cmp-loading {
+	pointer-events: none;
+}
+
+/* .......................................................................... */
+.cmp-btn {
+	border: 0;
+	color: inherit;
+	cursor: pointer;
+	font-size: 16px;
+	background: none;
+}
+.cmp-btn-light {
+	opacity: .7;
+	padding: 0 8px;
+	transition: .2s opacity;
+}
+.cmp-btn-light:focus,
+.cmp-btn-light:hover {
+	opacity: 1;
+}
+
+/* .......................................................................... */
+.cmp-save {
+	width: 32px;
+	background-color: var( --cmp-save-bg );
+	transition: .2s;
+	transition-property: margin-left, color, background-color, visibility;
+}
+.cmp-saved .cmp-save {
+	visibility: hidden;
+	margin-left: -32px;
+}
+.cmp-save.cmp-save:focus,
+.cmp-save.cmp-save:hover {
+	color: var( --cmp-save-bg );
+	background-color: var( --cmp-text );
+}
+
+/* .......................................................................... */
+.cmp-info {
+	flex: 1;
+	display: flex;
+	align-items: flex-start;
+	flex-direction: column;
+	justify-content: space-between;
+	padding: 6px 6px 4px;
+	overflow: hidden;
+	font-size: 13px;
+	line-height: 1em;
+	transition: .2s;
+	transition-property: padding-left, opacity;
+	opacity: .7;
+}
+.cmp-info:focus,
+.cmp-info:hover,
+.cmp-loaded .cmp-info {
+	opacity: 1;
+}
+.cmp-info > div {
+	pointer-events: none;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+/* .......................................................................... */
+.cmp-name {
+	max-width: 100%;
+	font-weight: bold;
+	border-radius: 2px;
+	padding-right: .4ch;
+	transition: .2s;
+	transition-property: box-shadow, color, background-color;
+}
+.cmp-info:focus .cmp-name,
+.cmp-info:hover .cmp-name {
+	color: var( --cmp-bg );
+	box-shadow: 0 0 0 2px var( --cmp-text );
+	background-color: var( --cmp-text );
+}
+.cmp:not( .cmp-saved ) .cmp-name::before {
+	content: "*";
+}
+.cmp-name:empty::after {
+	font-style: italic;
+	content: "Untitled";
+}
+
+/* .......................................................................... */
+.cmp-bpm-wrap,
+.cmp-duration-wrap {
+	display: inline-flex;
+	align-items: center;
+	font: 14px var( --font-number );
+}
+.cmp-duration-wrap {
+	margin-right: 10px;
+}
+.cmp-info .gsuiIcon {
+	margin-right: 4px;
+	opacity: .4;
+}
+#history {
+	left: 420px;
+	width: 360px;
+	box-shadow: 2px var( --head-dropdown-shadow );
+}
+#version {
+	font-size: 18px;
+}
+
+#versionNum {
+	opacity: .8;
+	font-family: var( --font-number );
+}
+
+#versionCheck {
+	font-size: 11px;
+	font-weight: bold;
+	opacity: .4;
+	cursor: pointer;
+	transition: .2s opacity;
+}
+#versionCheck:hover {
+	opacity: 1;
+}
+.placeholder {
+	display: none;
+	height: 100%;
+	box-sizing: border-box;
+	align-items: center;
+	justify-content: center;
+	padding: 1em;
+	text-align: center;
+	font-size: 12px;
+	opacity: .5;
+	user-select: none;
+}
+.placeholder:only-child {
+	display: flex;
+}
+.headDropdown {
+	position: absolute;
+	overflow: hidden;
+	display: grid;
+	height: 320px;
+	grid-template-rows: 32px 1fr;
+	box-sizing: border-box;
+	top: calc( 100% + var( --head-gap ) );
+	z-index: 1;
+	outline: 0;
+	border: 2px solid #444;
+	border-radius: 4px;
+	transition: .2s;
+	transition-property: opacity, visibility;
+}
+.headDropdown:focus {
+	border-color: #69b;
+}
+.headDropdown:focus-within {
+	z-index: 2;
+}
+.headDropdown-btn:not( :focus ) + .headDropdown:not( :focus-within ) {
+	opacity: 0;
+	visibility: hidden;
+}
+
+.headDropdown-head {
+	display: flex;
+	align-items: center;
+	color: #222;
+	font-size: 14px;
+	background-color: #888;
+	user-select: none;
+}
+.headDropdown-icon {
+	margin: 0 6px;
+	font-size: 16px;
+}
+.headDropdown-title {
+	font-weight: bold;
+}
+
+.headDropdown-list {
+	overflow: auto;
+	background-color: #444;
+}
+
+.headDropdown-backdrop {
+	position: absolute;
+	top: 68px;
+	left: 0;
+	right: 0;
+	bottom: -1000px;
+	opacity: 0;
+	visibility: hidden;
+	backdrop-filter: blur( 10px );
+	background-color: #0009;
+	transition: .4s;
+	transition-property: visibility, opacity;
+}
+.headDropdown-btn:focus ~ .headDropdown-backdrop,
+.headDropdown:focus-within + .headDropdown-backdrop {
+	visibility: visible;
+	opacity: 1;
+}
+.historyAction {
+	display: flex;
+	box-sizing: border-box;
+	align-items: center;
+	cursor: pointer;
+	height: 30px;
+	padding: 0 6px;
+	color: var( --history-action-text );
+	font-size: 14px;
+	font-family: var( --font-monospace );
+	background-color: var( --history-action-bg );
+	transition: filter .2s;
+}
+.historyAction:hover {
+	filter: brightness( 1.3 );
+}
+
+/* -------------------------------------------------------------------------- */
+.historyAction::before {
+	content: "";
+	display: block;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	transition: inherit;
+	background-color: var( --history-actionlight-bg );
+}
+.historyAction-undone:not( :hover )::before {
+	background-color: var( --history-actionlightoff-bg );
+}
+
+/* -------------------------------------------------------------------------- */
+.historyAction-icon {
+	width: 1.4ch;
+	margin: 0 6px;
+	text-align: center;
+}
+.historyAction-text {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	transition-duration: inherit;
+	transition-property: opacity;
+}
+.historyAction-undone .historyAction-icon,
+.historyAction-undone .historyAction-text {
+	opacity: .6;
+}
+#pianorollForbidden {
+	position: absolute;
+	z-index: 2000000; /* 1. */
+	top: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	overflow: hidden;
+	align-items: center;
+	justify-content: center;
+	background-color: #000a;
+	transition: .2s;
+	transition-property: opacity, visibility;
+}
+#pianorollForbidden.hidden {
+	opacity: 0;
+	visibility: hidden;
+}
+#pianorollForbidden::before {
+	content: "No pattern selected...";
+	display: block;
+	padding: 18px;
+	color: #ddd;
+	font-size: 12px;
+	font-style: italic;
+	font-weight: bold;
+	border-radius: 4px;
+	background-color: rgba( 255, 255, 255, .1 );
+}
+
+/*
+1.
+	z-index: 2000000; because of gsuiSliderGroup
+*/
+</style>
+</head>
+<body>
+<noscript>GridSound needs JavaScript to run</noscript>
+<div id="loading">
+	<div id="loadingContent">
+		<div class="TextGlitch" id="gsTitle">
+			<div class="TextGlitch-clip">
+				<div class="TextGlitch-word">GridSound</div>
+				<div class="TextGlitch-word TextGlitch-blend TextGlitch-blendA"></div>
+				<div class="TextGlitch-word TextGlitch-blend TextGlitch-blendB"></div>
+			</div>
+			<div class="TextGlitch-clip">
+				<div class="TextGlitch-word"></div>
+				<div class="TextGlitch-word TextGlitch-blend TextGlitch-blendA"></div>
+				<div class="TextGlitch-word TextGlitch-blend TextGlitch-blendB"></div>
+			</div>
+			<div class="TextGlitch-clip">
+				<div class="TextGlitch-word"></div>
+				<div class="TextGlitch-word TextGlitch-blend TextGlitch-blendA"></div>
+				<div class="TextGlitch-word TextGlitch-blend TextGlitch-blendB"></div>
+			</div>
+		</div>
+		<span id="loadingLoading">loading...</span>
+		<span id="loadingLoaded">click to start</span>
+		<span id="loadingStarting">starting...</span>
+	</div>
+</div>
+<div id="app">
+	<!--#head-->
+	<div id="body"></div>
+</div>
+<div id="head">
+	<div id="header">
+		<span id="title" data-text="GridSound" data-text-s="GS"></span>
+		<a class="btn btnLarge headBtn" href id="headUser" title="Cloud profile" target="_blank" rel="noopener"></a>
+		<button class="btn btnLarge headBtn btnIconLarge gsuiIcon" id="login" data-icon="profile" title="Login to GridSound"></button>
+		<button class="btn btnLarge headBtn btnIconLarge gsuiIcon" id="logout" data-icon="logout" title="Logout"></button>
+		<div id="headCmps">
+			<button class="btn btnLarge headBtn headDropdown-btn gsuiIcon" id="cmpsBtn" data-icon="musics" title="Create cloud/local compositions"></button>
+			<!--#cmps-->
+			<div class="headDropdown-backdrop"></div>
+		</div>
+	</div>
+	<div id="headCmp">
+		<button id="headCmpSave" class="btn cmp-save gsuiIcon" title="Save composition"></button>
+		<button id="headCmpInfo" class="btn" title="Edit composition's title">
+			<i id="headCmpIcon" class="gsuiIcon"></i>
+			<span id="headCmpName"></span>
+			<span id="headCmpHover" class="gsuiIcon" data-icon="pen"></span>
+			<span id="headCmpDur"></span>
+		</button>
+	</div>
+	<div id="ctrlA">
+		<div id="headGain" class="btnMarge" title="Main app volume (this will not affect the rendering)"></div>
+		<div id="headPlay" class="btnGroup btnMarge">
+			<button class="playBtn btn" id="playToggle" data-dir="up" title="Toggle focus between the composition and piano windows"><span></span><span></span></button>
+			<button class="playBtn btn btnLarge gsuiIcon" id="play" data-icon="play"></button>
+			<button class="playBtn btn btnLarge gsuiIcon" id="stop" data-icon="stop"></button>
+		</div>
+		<button id="headTempo" class="btn btnMarge" title="Edit the time signature and BPM">
+			<div id="timeSignature">
+				<span id="beatsPerMeasure"></span>
+				<span id="stepsPerBeat"></span>
+			</div>
+			<div id="bpm"></div>
+		</button>
+	</div>
+	<div id="ctrlB">
+		<div id="headHist" class="btnGroup btnMarge">
+			<button class="histBtn btn btnLarge gsuiIcon" id="undo" data-icon="undo" title="Undo the previous action"></button>
+			<button class="histBtn btn btnLarge gsuiIcon" id="redo" data-icon="redo" title="Redo the last action"></button>
+			<button class="histBtn btn headDropdown-btn gsuiIcon" id="undoMore" data-icon="caret-down" title="Show the actions list"></button>
+			<!--#history-->
+			<div class="headDropdown-backdrop"></div>
+		</div>
+		<canvas id="headAnalyser" class="btnMarge"></canvas>
+		<button id="headExport" class="btn btnMarge btnLarge btnBg gsuiIcon" data-icon="export" title="Export the composition"></button>
+		<button id="headSettings" class="btn btnMarge btnLarge btnBg gsuiIcon" data-icon="settings" title="Settings"></button>
+	</div>
+	<div id="headCurrentTime"></div>
+	<div id="winBtns">
+		<button class="btn btnMarge winBtn" data-win="blocks" title="Open/close the blocks window">blocks</button>
+		<button class="btn btnMarge winBtn" data-win="mixer" title="Open/close the mixer window">mixer</button>
+		<button class="btn btnMarge winBtn" data-win="synth" title="Open/close the synthesizer window">synth</button>
+		<button class="btn btnMarge winBtn" data-win="main" title="Open/close the composition window">composition</button>
+		<button class="btn btnMarge winBtn" data-win="drums" title="Open/close the drums window">drums</button>
+		<button class="btn btnMarge winBtn" data-win="piano" title="Open/close the piano window">pianoroll</button>
+		<button class="btn btnMarge winBtn" data-win="effects" title="Open/close the effects window">effects</button>
+	</div>
+	<div id="headHelp">
+		<button class="btn btnMarge btnLarge btnBg gsuiIcon" id="cookies" data-icon="cookie" title="Cookies"></button>
+		<button class="btn btnMarge btnLarge btnBg gsuiIcon" id="helpKeyboardShortcuts" data-icon="keyboard" title="Keyboard shortcuts"></button>
+		<a      class="btn btnMarge btnLarge btnBg gsuiIcon" id="help" data-icon="help" title="Help" href="https://github.com/gridsound/daw/wiki/help" target="_blank" rel="noopener"></a>
+		<a      class="btn btnMarge btnLarge btnBg gsuiIcon" id="changelog" data-icon="changelog" title="Changelog" href="https://github.com/gridsound/daw/wiki/changelog" target="_blank" rel="noopener"></a>
+		<button class="btn btnMarge btnLarge btnBg gsuiIcon" id="helpAbout" data-icon="about" title="About"></button>
+	</div>
+	<div id="headVersion">
+		<a id="headVersionBtn" class="headDropdown-btn" title="Access older versions" href="https://github.com/gridsound/daw/wiki/versions" target="_blank" rel="noopener">
+			<i class="gsuiIcon" data-icon="list"></i>
+			<span id="headVersionNum"></span>
+		</a>
+	</div>
+</div>
+<div class="cmp" id="cmp" draggable="true" data-remove data-remove-id>
+	<button data-action="save" class="cmp-btn cmp-save gsuiIcon"></button>
+	<a href data-action="open" class="cmp-info">
+		<div class="cmp-name"></div>
+		<div>
+			<span class="cmp-duration-wrap">
+				<i class="gsuiIcon" data-icon="clock"></i>
+				<span class="cmp-duration"></span>
+			</span>
+			<span class="cmp-bpm-wrap">
+				<i class="gsuiIcon" data-icon="speed"></i>
+				<span class="cmp-bpm"></span>
+			</span>
+		</div>
+	</a>
+	<a href class="cmp-btn cmp-btn-light gsuiIcon" data-action="json" data-icon="file-export" title="Export to JSON file"></a>
+	<button class="cmp-btn cmp-btn-light gsuiIcon" data-action="delete" data-icon="minus-oct" title="Delete"></button>
+</div>
+<div id="cmps" class="headDropdown" tabindex="0">
+	<div class="headDropdown-head" id="cmpsLocalTitle">
+		<i class="headDropdown-icon gsuiIcon" data-icon="local"></i>
+		<span class="headDropdown-title">local</span>
+		<button class="windowBtn" id="localNewCmp" title="Create a new composition on this computer">
+			<i class="windowBtnIcon gsuiIcon" data-icon="plus"></i>
+			<span class="windowBtnText">new</span>
+		</button>
+		<button class="windowBtn" id="localOpenCmp" title="Open a composition on this computer">
+			<i class="windowBtnIcon gsuiIcon" data-icon="folder-open"></i>
+			<span class="windowBtnText">open</span>
+		</button>
+	</div>
+	<div class="headDropdown-head" id="cmpsCloudTitle">
+		<i class="headDropdown-icon gsuiIcon" data-icon="cloud"></i>
+		<span class="headDropdown-title">cloud</span>
+		<button class="windowBtn" id="cloudNewCmp" title="Create a new composition on your cloud profile">
+			<i class="windowBtnIcon gsuiIcon" data-icon="plus"></i>
+			<span class="windowBtnText">new</span>
+		</button>
+	</div>
+	<div class="headDropdown-list" id="cmpsLocalList">
+		<div class="placeholder">
+			<span>there is no local composition here</span>
+		</div>
+	</div>
+	<div class="headDropdown-list" id="cmpsCloudList">
+		<div class="placeholder">
+			<span>you don't have any cloud composition yet</span>
+			<span>you are not connected</span>
+		</div>
+	</div>
+</div>
+<div id="history" class="headDropdown" tabindex="0">
+	<div class="headDropdown-head" id="historyTitle">
+		<i class="headDropdown-icon gsuiIcon" data-icon="history"></i>
+		<span class="headDropdown-title">history</span>
+	</div>
+	<div class="headDropdown-list" id="historyList">
+		<div class="placeholder">
+			<span>there is nothing to undo</span>
+		</div>
+	</div>
+</div>
+<div class="historyAction" id="historyAction" data-remove data-remove-id>
+	<i class="historyAction-icon gsuiIcon"></i>
+	<span class="historyAction-text"></span>
+</div>
+<div data-window="blocks"></div>
+<div data-window="mixer"></div>
+<div data-window="synth">
+	<div class="windowMenu">
+		<button id="synthName" class="windowBtn windowDataBtn"></button>
+		<i id="synthDestArrow" class="gsuiIcon" data-icon="arrow-right"></i>
+		<button id="synthChannelBtn" class="windowBtn">
+			<i class="windowBtnIcon gsuiIcon" data-icon="mixer"></i>
+			<span id="synthChannelBtnText" class="windowBtnText"></span>
+		</button>
+	</div>
+</div>
+<div data-window="piano">
+	<div class="windowMenu">
+		<button id="pianorollName" class="windowBtn windowDataBtn"></button>
+	</div>
+	<div id="pianorollForbidden" class="no-select"></div>
+</div>
+<div data-window="main"></div>
+<div data-window="effects">
+	<div class="windowMenu">
+		<button id="channelName" class="windowBtn windowDataBtn"></button>
+	</div>
+	<div class="windowBetaMsg">
+		Beta: the effects may not work as expected due to browser support
+	</div>
+</div>
+<div data-window="drums">
+	<div class="windowMenu">
+		<button id="drumsName" class="windowBtn windowDataBtn"></button>
+	</div>
+</div>
+<div class="popup" id="authPopupContent" data-remove>
+	<fieldset>
+		<legend>Sign in</legend>
+		<div class="param">
+			<div class="param-title">
+				<span>Email</span>
+				<small>or username</small>
+			</div>
+			<div class="param-values">
+				<input type="text" name="email"/>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">
+				<span>Password</span>
+			</div>
+			<div class="param-values">
+				<input type="password" name="password"/>
+			</div>
+		</div>
+		<div id="authPopupError" class="popup-error-msg"></div>
+	</fieldset>
+	<a target="_blank" rel="noopener" href="https://gridsound.com/#/forgotPassword">Forgot password&nbsp;?</a><br/>
+	<a target="_blank" rel="noopener" href="https://gridsound.com/#/auth">Create a new account</a>
+</div>
+<div class="popup" id="openPopupContent" data-remove>
+	<fieldset>
+		<legend>Open and load a new composition</legend>
+		<div class="param">
+			<div class="param-title">With an URL</div>
+			<div class="param-values">
+				<input id="inputOpenURL" name="url" type="url" placeholder="http://"/>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">
+				With a local file<br/>
+				<small>(Please notice that you can also drop a file into the app)</small>
+			</div>
+			<div class="param-values">
+				<input id="inputOpenFile" name="file" type="file"/>
+			</div>
+		</div>
+	</fieldset>
+</div>
+<div class="popup" id="aboutPopupContent" data-remove>
+	<div class="title">
+		<span>GridSound</span>
+		<span id="version">
+			<span id="versionNum"></span>
+			<i id="versionIcon" class="gsuiIcon"></i>
+			<span id="versionCheck">check the version</span>
+		</span>
+	</div>
+	<div>
+		GridSound is a <b>work-in-progress</b> free browser-based digital audio workstation following the
+		<a target="_blank" rel="noopener" href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a>.
+	</div>
+	<div>
+		You can create an account (by clicking <i class="gsuiIcon" data-icon="profile"></i>)
+		and start uploading your compositions online <i class="gsuiIcon" data-icon="cloud"></i>
+	</div>
+	<div class="social-network">
+		<a target="_blank" rel="noopener" title="GitHub"   class="gsuiIcon gsuiIconB" data-icon="github"   href="https://github.com/gridsound"></a>
+		<a target="_blank" rel="noopener" title="Twitter"  class="gsuiIcon gsuiIconB" data-icon="twitter"  href="https://twitter.com/gridsound"></a>
+		<a target="_blank" rel="noopener" title="YouTube"  class="gsuiIcon gsuiIconB" data-icon="youtube"  href="https://youtube.com/channel/UC2-jebT7TS8xJgJPymXqatA"></a>
+		<a target="_blank" rel="noopener" title="Facebook" class="gsuiIcon gsuiIconB" data-icon="facebook" href="https://facebook.com/gridsound"></a>
+		<a target="_blank" rel="noopener" title="CodePen"  class="gsuiIcon gsuiIconB" data-icon="codepen"  href="https://codepen.io/gridsound"></a>
+		<a target="_blank" rel="noopener" title="Discord"  class="gsuiIcon gsuiIconB" data-icon="discord"  href="https://discord.gg/NUYxHAg"></a>
+	</div>
+</div>
+<div class="popup" id="tempoPopupContent" data-remove>
+	<fieldset>
+		<legend>BPM / time signature</legend>
+		<div class="param">
+			<div class="param-title">Beats per measure</div>
+			<div class="param-values"><input id="tempoBeatsPM" name="beatsPerMeasure" type="number" min="1" max="16"/></div>
+		</div>
+		<div class="param">
+			<div class="param-title">Steps per beat</div>
+			<div class="param-values"><input id="tempoStepsPB" name="stepsPerBeat" type="number" min="1" max="16"/></div>
+		</div>
+		<div class="param">
+			<div class="param-title">BPM (Beats Per Minute)</div>
+			<div class="param-values">
+				<input id="tempoBPM" name="bpm" type="number" min="1" max="999"/>
+				<a id="tempoBPMTap" class="gsuiIcon" data-icon="tint"></a>
+			</div>
+		</div>
+	</fieldset>
+</div>
+<div class="popup" id="renderPopupContent" data-remove>
+	<fieldset>
+		<legend>Render the current composition</legend>
+		<div id="renderWrap">
+			<a href id="renderBtn">
+				<span id="renderBtn0">
+					<span>Render</span>
+					<i class="gsuiIcon" data-icon="render"></i>
+				</span>
+				<span id="renderBtn1">
+					<span>Rendering...</span>
+					<i class="gsuiIcon" data-spin="on"></i>
+				</span>
+				<span id="renderBtn2">
+					<span>Download WAV file</span>
+					<i class="gsuiIcon" data-icon="export"></i>
+				</span>
+			</a>
+			<progress id="renderProgress" value="" max="1"></progress>
+		</div>
+	</fieldset>
+</div>
+<div class="popup" id="settingsPopupContent" data-remove>
+	<fieldset>
+		<legend>UI refresh rate</legend>
+		<div class="param">
+			<div class="param-title">Auto</div>
+			<div class="param-values">
+				<label>
+					<input id="settingsUIRateModeAuto" name="UIRateMode" type="radio" value="auto"/>
+					<span class="settingsPopupFps">60</span>
+				</label>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Manual</div>
+			<div class="param-values">
+				<label>
+					<input id="settingsUIRateModeManual" name="UIRateMode" type="radio" value="manual"/>
+					<span id="settingsUIRateManualFps" class="settingsPopupFps"></span>
+				</label>
+				<input id="settingsUIRateManual" name="UIRateManual" type="range" step="1" min="5" max="40"/>
+			</div>
+		</div>
+	</fieldset>
+	<fieldset>
+		<legend>Windows</legend>
+		<div class="param">
+			<div class="param-title">Move/resize mode</div>
+			<div class="param-values">
+				<label>
+					<input id="settingsWindowsMode" name="windowsDirectMode" type="checkbox"/>
+					<span>direct</span>
+				</label>
+			</div>
+		</div>
+	</fieldset>
+</div>
+<div class="popup" id="shortcutsPopupContent" data-remove>
+	<fieldset>
+		<legend>Global shortcuts</legend>
+		<div class="param">
+			<div class="param-title">Save the current composition</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Ctrl / Alt</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">S</kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Open a composition</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Ctrl / Alt</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">O</kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Open a new composition</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Alt</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">N</kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Play / pause the selected grid</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Space</kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Undo the previous action</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Ctrl / Alt</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">Z</kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Redo the next action</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Ctrl / Alt</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">Shift</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">Z</kbd>
+			</div>
+		</div>
+	</fieldset>
+	<fieldset>
+		<legend>Grids shortcuts</legend>
+		<div class="param">
+			<div class="param-title">Select all the blocks of the focused grid</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Ctrl / Alt</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">A</kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Deselect all the blocks of the focused grid</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Ctrl / Alt</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">D</kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Duplicate (copy/paste) the selected blocks</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Ctrl / Alt</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">B</kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Delete all the selected blocks of the focused grid</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Delete</kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Move vertically inside the grids</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Scroll <i class="gsuiIcon" data-icon="arrows-v"></i></kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">Move horizontally inside the grids</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Shift</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">Scroll <i class="gsuiIcon" data-icon="arrows-v"></i></kbd>
+			</div>
+		</div>
+		<div class="param">
+			<div class="param-title">
+				Zoom-in / zoom-out<br/>
+				Zoom X by scrolling above the grid<br/>
+				Zoom Y by scrolling above the keys<br/>
+			</div>
+			<div class="param-values">
+				<kbd class="shortcuts">Ctrl / ⌘</kbd><i class="shortcuts-sep gsuiIcon" data-icon="plus"></i>
+				<kbd class="shortcuts">Scroll <i class="gsuiIcon" data-icon="arrows-v"></i></kbd>
+			</div>
+		</div>
+	</fieldset>
+</div>
+<div class="popup" id="selectChanPopupContent" data-remove>
+	<fieldset>
+		<legend>Select a channel</legend>
+		<select id="selectChanPopupSelect" size="8" name="channel"></select>
+	</fieldset>
+</div>
+<script>
+"use strict";
+
+if ( navigator.serviceWorker &&
+	document.cookie.indexOf( "cookieAccepted" ) > -1
+) {
+	navigator.serviceWorker.register( "serviceWorker.js" )
+		.then( reg => {
+			console.log( `Service worker ${
+				reg.installing ? "installing" :
+				reg.waiting ? "installed" :
+				reg.active ? "active" : "" }` );
+		}, console.log.bind( console, "Service worker registration failed" ) );
+}
+
+function UIdomInit() {
+	window.DOM = UIdomFill();
+	UIdomGetComments().forEach( com => {
+		com.replaceWith( DOM[ com.textContent.substr( 1 ) ] );
+	} );
+}
+
+function UIdomFill() {
+	const DOM = UIdomFillIds(),
+		winBtns = DOM.winBtns.querySelectorAll( ".winBtn" );
+
+	DOM.winBtnsMap = Array.prototype.reduce.call( winBtns, ( map, btn ) => {
+		map.set( btn.dataset.win, btn );
+		return map;
+	}, new Map() );
+	return DOM;
+}
+
+function UIdomFillIds() {
+	const ids = document.querySelectorAll( "[id]" );
+
+	return Array.prototype.reduce.call( ids, ( obj, el ) => {
+		obj[ el.id ] = el;
+		if ( "remove" in el.dataset ) {
+			el.remove();
+			el.removeAttribute( "data-remove" );
+		}
+		if ( "removeId" in el.dataset ) {
+			el.removeAttribute( "id" );
+			el.removeAttribute( "data-remove-id" );
+		}
+		return obj;
+	}, {} );
+}
+
+function UIdomGetComments() {
+	const list = [],
+		treeWalker = document.createTreeWalker(
+			document.body,
+			NodeFilter.SHOW_COMMENT,
+			{ acceptNode: com => com.textContent[ 0 ] === "#"
+				? NodeFilter.FILTER_ACCEPT
+				: NodeFilter.FILTER_REJECT
+			},
+			false
+		);
+
+	while ( treeWalker.nextNode() ) {
+		list.push( treeWalker.currentNode );
+	}
+	return list;
+}
+
+class TextGlitch {
+	constructor( root ) {
+		this._root = root;
+		this._elClips = root.querySelectorAll( ".TextGlitch-clip" );
+		this._elWords = root.querySelectorAll( ".TextGlitch-word" );
+		this._frame = this._frame.bind( this );
+		this._unglitch = this._unglitch.bind( this );
+		this._frameId = null;
+		this._text = "";
+		this._textAlt = [];
+		Object.seal( this );
+
+		this.setTexts( [
+			"GridSound",
+			"gRIDsOUND",
+			"&<:]$+\\#)",
+			"6/1)20^?}",
+			"9-!>5θnu]",
+		] );
+	}
+
+	on() {
+		if ( !this._frameId ) {
+			this._frame();
+		}
+	}
+	off() {
+		clearTimeout( this._frameId );
+		this._frameId = null;
+		this._unglitch();
+	}
+	setTexts( [ text, ...alt ] ) {
+		this._text = text;
+		this._textAlt = alt;
+	}
+
+	// private:
+	_frame() {
+		this._glitch();
+		setTimeout( this._unglitch, 50 + Math.random() * 200 );
+		this._frameId = setTimeout( this._frame, 250 + Math.random() * 800 );
+	}
+	_glitch() {
+		const clip1 = this._randDouble( .2 ),
+			clip2 = this._randDouble( .2 );
+
+		this._elClips.forEach( el => {
+			const x = this._randDouble( .25 ),
+				y = this._randDouble( .05 );
+
+			el.style.transform = `translate(${ x }em, ${ y }em)`;
+		} );
+		this._elClips[ 0 ].style.clipPath = `inset( 0 0 ${ .6 + clip1 }em 0 )`;
+		this._elClips[ 1 ].style.clipPath = `inset( ${ .4 - clip1 }em 0 ${ .3 - clip2 }em 0 )`;
+		this._elClips[ 2 ].style.clipPath = `inset( ${ .7 + clip2 }em 0 0 0 )`;
+		this._textContent( this._randText() );
+		this._root.classList.add( "TextGlitch-blended" );
+	}
+	_unglitch() {
+		this._elClips.forEach( el => {
+			el.style.clipPath =
+			el.style.transform = "";
+		} );
+		this._textContent( this._text );
+		this._root.classList.remove( "TextGlitch-blended" );
+	}
+
+	_randText() {
+		const txt = Array.from( this._text );
+
+		for ( let i = 0; i < 5; ++i ) {
+			const ind = this._randInt( this._text.length );
+
+			txt[ ind ] = this._textAlt[ this._randInt( this._textAlt.length ) ][ ind ];
+		}
+		return txt.join( "" );
+	}
+	_randDouble( d ) {
+		return Math.random() * d - d / 2;
+	}
+	_randInt( n ) {
+		return Math.random() * n | 0;
+	}
+	_textContent( txt ) {
+		this._elWords.forEach( el => el.textContent = txt );
+	}
+}
+
+function UIloading() {
+	return new Promise( resolve => {
+		const el = document.querySelector( "#loading" ),
+			elTitle = document.querySelector( "#gsTitle" ),
+			glitch = new TextGlitch( elTitle );
+
+		el.classList.add( "loaded" );
+		if ( window.CSS && CSS.supports( "clip-path: inset(0 1px 2px 3px)" ) ) {
+			glitch.on();
+		}
+		el.onclick = () => {
+			glitch.off();
+			el.classList.add( "starting" );
+			setTimeout( resolve, 100 );
+		};
+	} );
+}
+
+function UIloaded() {
+	const el = document.querySelector( "#loading" );
+
+	el.classList.add( "started" );
+	setTimeout( () => el.remove(), 800 );
+}
+
+function UIauthInit() {
+	DOM.login.onclick = UIauthLogin;
+	DOM.logout.onclick = UIauthLogout;
+}
+
+function UIauthLoading( b ) {
+	DOM.login.dataset.spin =
+	DOM.logout.dataset.spin = b ? "on" : "";
+}
+
+function UIauthLogout() {
+	UIauthLoading( true );
+	gsapiClient.logout()
+		.finally( () => UIauthLoading( false ) )
+		.then( UIauthLogoutThen );
+}
+
+function UIauthGetMe() {
+	UIauthLoading( true );
+	return gsapiClient.getMe()
+		.then( me => {
+			UIauthLoginThen( me );
+			return gsapiClient.getUserCompositions( me.id );
+		} )
+		.then( cmps => {
+			const opt = { saveMode: "cloud" };
+
+			cmps.forEach( cmp => DAW.addComposition( cmp.data, opt ) );
+		} )
+		.catch( res => {
+			if ( res.code !== 401 ) {
+				throw res;
+			}
+		} )
+		.finally( () => UIauthLoading( false ) );
+}
+
+function UIauthLogin() {
+	if ( !gsapiClient.user.id ) {
+		gsuiPopup.custom( {
+			ok: "Sign in",
+			title: "Authentication",
+			submit: UIauthLoginSubmit,
+			element: DOM.authPopupContent,
+		} ).then( () => {
+			DOM.authPopupContent.querySelectorAll( "input" )
+				.forEach( inp => inp.value = "" );
+		} );
+		return false;
+	}
+}
+
+function UIauthLoginSubmit( obj ) {
+	UIauthLoading( true );
+	DOM.authPopupError.textContent = "";
+	return gsapiClient.login( obj.email, obj.password )
+		.then( me => {
+			UIauthLoginThen( me );
+			return gsapiClient.getUserCompositions( me.id );
+		} )
+		.then( cmps => {
+			const opt = { saveMode: "cloud" };
+
+			cmps.forEach( cmp => DAW.addComposition( cmp.data, opt ) );
+		} )
+		.catch( res => {
+			DOM.authPopupError.textContent = res.msg;
+			throw res;
+		} )
+		.finally( () => UIauthLoading( false ) );
+}
+
+function UIauthLoginThen( me ) {
+	DOM.app.classList.add( "logged" );
+	DOM.headUser.href = `https://gridsound.com/#/u/${ me.username }`;
+	DOM.headUser.style.backgroundImage = `url("${ me.avatar }")`;
+	return me;
+}
+
+function UIauthLogoutThen() {
+	DOM.app.classList.remove( "logged" );
+	DOM.headUser.removeAttribute( "href" );
+	DOM.headUser.style.backgroundImage = "";
+	Array.from( DOM.cmpsCloudList.children )
+		.forEach( el => DAW.deleteComposition( "cloud", el.dataset.id ) );
+	if ( !DAW.get.cmp() ) {
+		UIcompositionClickNewLocal();
+	}
+}
+
+function UIauthSaveComposition( cmp ) {
+	return gsapiClient.saveComposition( cmp )
+		.then( () => cmp, err => {
+			gsuiPopup.alert( `Error ${ err.code }`,
+				"An error happened while saving " +
+				"your composition&nbsp;:<br/>" +
+				`<code>${ err.msg || err }</code>`
+			);
+			throw err;
+		} );
+}
+
+const UIdropCmpExt = {
+	gs: true,
+	txt: true,
+	json: true,
+};
+
+function UIdrop( e ) {
+	const files = Array.from( e.dataTransfer.files ),
+		cmpFile = files.find( f => f.name.split( "." ).pop().toLowerCase() in UIdropCmpExt );
+
+	if ( cmpFile ) {
+		DAW.addCompositionByBlob( cmpFile )
+			.then( cmp => DAW.openComposition( "local", cmp.id ) );
+	}
+	return false;
+}
+
+function UIdrumsInit() {
+	const win = UIwindows.window( "drums" );
+
+	UIdrums.setDAWCore( DAW );
+	UIdrums.setFontSize( 42 );
+	UIdrums.setPxPerBeat( 120 );
+	UIdrums.setWaveforms( UIpatterns.svgForms.bufferHD );
+	UIdrums.rootElement.onfocus = () => DAW.drumsFocus();
+	DOM.drumsName.onclick = UIdrumsNameClick;
+	win.onresize =
+	win.onresizing = ( w, h ) => UIdrums.resize( w, h );
+	win.onfocusin = UIdrumsWindowFocusin;
+	win.append( UIdrums.rootElement );
+	UIdrums.attached();
+}
+
+function UIdrumsWindowFocusin( e ) {
+	if ( !UIdrums.rootElement.contains( e.target ) ) {
+		UIdrums.rootElement.focus();
+	}
+}
+
+function UIdrumsNameClick() {
+	const id = DAW.get.patternDrumsOpened(),
+		name = DOM.drumsName.textContent;
+
+	gsuiPopup.prompt( "Rename pattern", "", name, "Rename" )
+		.then( name => DAW.callAction( "renamePattern", id, name ) );
+}
+
+function UItitle( cmpName ) {
+	const name = cmpName || "GridSound";
+
+	document.title = DAW.compositionNeedSave() ? `*${ name }` : name;
+}
+
+function UIsynthInit() {
+	UIsynth.setDAWCore( DAW );
+	UIsynth.setWaveList( Array.from( gswaPeriodicWaves.list.keys() ) );
+	DOM.synthName.onclick = () => {
+		const id = DAW.get.synthOpened(),
+			name = DOM.synthName.textContent;
+
+		gsuiPopup.prompt( "Rename synthesizer", "", name, "Rename" )
+			.then( name => DAW.callAction( "renameSynth", id, name ) );
+	};
+	UIwindows.window( "synth" ).append( UIsynth.rootElement );
+	UIwindows.window( "synth" ).onresizing = UIsynth.resizing.bind( UIsynth );
+	UIwindows.window( "synth" ).onresize = UIsynth.resize.bind( UIsynth );
+	UIsynth.attached();
+}
+
+function UIsynthChange( obj ) {
+	if ( "name" in obj ) {
+		DOM.synthName.textContent = obj.name;
+	}
+	if ( "dest" in obj ) {
+		DOM.synthChannelBtnText.textContent = DAW.get.channel( obj.dest ).name;
+	}
+}
+
+function UImixerInit() {
+	const win = UIwindows.window( "mixer" );
+
+	win.append( UImixer.rootElement );
+	win.onresize = () => UImixer.resize();
+	win.onresizing = () => UImixer.resizing();
+	UImixer.attached();
+	UImixer.setDAWCore( DAW );
+	UImixer.onselectChan = id => UIeffectsSelectChan( id );
+}
+
+function UImixerOpenChanPopup( objId ) {
+	const currChanId = DAW.get.synth( objId ).dest;
+
+	gsuiPatterns.selectChanPopupSelect.value = currChanId;
+	gsuiPopup.custom( {
+		title: "Channels",
+		element: gsuiPatterns.selectChanPopupContent,
+		submit( { channel } ) {
+			if ( channel !== currChanId ) {
+				DAW.callAction( "redirectSynth", objId, channel );
+			}
+		}
+	} );
+}
+
+function UIcookieInit() {
+	const cookies = document.cookie;
+
+	if ( cookies.indexOf( "cookieAccepted" ) > -1 ) {
+		DOM.cookies.remove();
+	} else {
+		DOM.cookies.onclick = UIcookieClick;
+	}
+}
+
+function UIcookieClick() {
+	gsuiPopup.confirm(
+		"Cookie law",
+		"Do you accept to let the GridSound's DAW<br/>"
+		+ "using Cookies to offers you two features&nbsp;:<ul>"
+		+ "<li>Saving compositions locally (localStorage)</li>"
+		+ "<li>Offline mode (serviceWorker)</li>"
+		+ "</ul>"
+		+ "There are no tracker, analytics or adverts of any<br/>"
+		+ "kind on this webapp.",
+		"Accept", "Decline"
+	).then( b => {
+		if ( b ) {
+			document.cookie = "cookieAccepted";
+			DOM.cookies.remove();
+		}
+	} );
+	return false;
+}
+
+function UIeffectsInit() {
+	const win = UIwindows.window( "effects" );
+
+	DOM.channelName.onclick = UIeffectsOnclickName;
+	win.append( UIeffects.rootElement );
+	win.onresize = () => UIeffects.resize();
+	win.onresizing = () => UIeffects.resizing();
+	UIeffects.setDAWCore( DAW );
+	UIeffects.attached();
+	UIeffects._uiEffects.askData = ( fxId, fxType, dataType, ...args ) => {
+		if ( fxType === "filter" && dataType === "curve" ) {
+			const wafx = DAW.get.audioEffect( fxId );
+
+			return wafx && wafx.updateResponse( args[ 0 ] );
+		}
+	};
+}
+
+function UIeffectsRenameChan( name ) {
+	DOM.channelName.textContent = name;
+}
+
+function UIeffectsSelectChan( id ) {
+	UIeffectsRenameChan( DAW.get.channel( id ).name );
+	UIeffects.setDestFilter( id );
+}
+
+function UIeffectsOnclickName() {
+	const id = UImixer.getSelectedChannelId();
+
+	if ( id !== "main" ) {
+		gsuiPopup
+			.prompt( "Rename channel", "", DOM.channelName.textContent, "Rename" )
+			.then( name => DAW.callAction( "renameChannel", id, name ) );
+	}
+}
+
+const UIhistoryActions = new Map();
+
+function UIhistoryInit() {
+	DAW.cb.historyUndo = act => UIhistoryActions.get( act.index ).classList.add( "historyAction-undone" );
+	DAW.cb.historyRedo = act => UIhistoryActions.get( act.index ).classList.remove( "historyAction-undone" );
+	DAW.cb.historyAddAction = UIhistoryAddAction;
+	DAW.cb.historyDeleteAction = UIhistoryDeleteAction;
+	DOM.undo.onclick = () => DAW.history.undo();
+	DOM.redo.onclick = () => DAW.history.redo();
+}
+
+function UIhistoryAddAction( act ) {
+	const div = DOM.historyAction.cloneNode( true );
+
+	UIhistoryActions.set( act.index, div );
+	div.children[ 0 ].dataset.icon = act.icon;
+	div.children[ 1 ].innerHTML = act.desc;
+	div.onclick = () => DAW.history.goToAction( act );
+	DOM.historyList.append( div );
+	DOM.historyList.scrollTop = 10000000;
+}
+
+function UIhistoryDeleteAction( { index } ) {
+	UIhistoryActions.get( index ).remove();
+	UIhistoryActions.delete( index );
+}
+
+const UIwindows = new gsuiWindows();
+
+function UIwindowsInit() {
+	UIwindows.setRootElement( DOM.body );
+	UIwindows.lowGraphics( true );
+	UIwindowsAppendContent( UIwindows );
+	UIwindows.onopen = win => UIwindowsBtn( win.id, true );
+	UIwindows.onclose = win => {
+		UIwindowsBtn( win.id, false );
+		switch ( win.id ) {
+			case "piano": DAW.callAction( "closePattern", "keys" ); break;
+			case "drums": DAW.callAction( "closePattern", "drums" ); break;
+		}
+	};
+	DOM.winBtns.onclick = e => {
+		const btn = e.target,
+			winId = btn.dataset.win;
+
+		if ( winId ) {
+			UIwindows.window( winId ).openToggle(
+				!btn.classList.contains( "winBtn-open" ) );
+		}
+	};
+	UIwindowsSetPos( "blocks",  "winBlocks",   20,  20, 180, 380, 320, 780, "folder-tree", "blocks" );
+	UIwindowsSetPos( "mixer",   "winMixer",   360,  20, 266, 200, 400, 360, "mixer",       "mixer" );
+	UIwindowsSetPos( "main",    "winMain",    780,  20, 380, 180, 600, 360, "music",       "composition" );
+	UIwindowsSetPos( "synth",   "winSynth",   360, 400, 340, 220, 400, 400, "oscillator",  "synth" );
+	UIwindowsSetPos( "piano",   "winPiano",   780, 400, 380, 180, 600, 400, "keys",        "pianoroll" );
+	UIwindowsSetPos( "drums",   "winDrums",   410, 450, 380, 180, 900, 400, "drums",       "drums" );
+	UIwindowsSetPos( "effects", "winEffects", 480, 120, 230, 180, 420, 360, "effects",     "effects" );
+}
+
+function UIwindowsSetPos( winId, attrId, x, y, wmin, hmin, w, h, icon, title ) {
+	const win = UIwindows.window( winId );
+
+	win.setSize( w, h );
+	win.setMinSize( wmin, hmin );
+	win.setTitle( title );
+	win.setIdAttr( attrId );
+	win.setPosition( x, y );
+	win.setTitleIcon( icon );
+}
+
+function UIwindowsBtn( winId, b ) {
+	DOM.winBtnsMap.get( winId ).classList.toggle( "winBtn-open", b );
+}
+
+function UIwindowsAppendContent( UIwindows ) {
+	document.querySelectorAll( "div[data-window]" ).forEach( winCnt => {
+		const win = UIwindows.createWindow( winCnt.dataset.window ),
+			elWinCnt = win.rootElement.querySelector( ".gsuiWindow-content" ),
+			children = Array.from( winCnt.children );
+
+		winCnt.remove();
+		winCnt.classList.forEach( c => elWinCnt.classList.add( c ) );
+		if ( children.length ) {
+			const child0 = children[ 0 ];
+
+			if ( child0.classList.contains( "windowMenu" ) ) {
+				children.shift();
+				win.headAppend( ...child0.children );
+			}
+			win.append( ...children );
+		}
+	} );
+}
+
+function UIpatternsInit() {
+	const win = UIwindows.window( "blocks" );
+
+	UIpatterns.setDAWCore( DAW );
+	win.append( UIpatterns.rootElement );
+	UIpatterns.attached();
+	gsuiPatterns.selectChanPopupContent.classList.add( "popup" );
+}
+
+function UIpatternsBuffersLoaded( buffers ) {
+	UIpatterns.bufferLoaded( buffers );
+	UIpatternroll.getBlocks().forEach( ( elBlc, blcId ) => {
+		const blc = DAW.get.block( blcId ),
+			pat = DAW.get.pattern( blc.pattern );
+
+		if ( pat.type === "buffer" && pat.buffer in buffers ) {
+			UIpatterns.svgForms.buffer.setSVGViewbox( elBlc._gsuiSVGform, blc.offset, blc.duration, DAW.get.bpm() / 60 );
+		}
+	} );
+}
+
+function UIupdatePattern( id, obj ) {
+	if ( obj ) {
+		if ( "duration" in obj ) {
+			const foc = DAW.getFocusedName();
+
+			if ( ( foc === "pianoroll" && id === DAW.get.patternKeysOpened() ) ||
+				( foc === "drums" && id === DAW.get.patternDrumsOpened() )
+			) {
+				DOM.sliderTime.options( { max: obj.duration } );
+			}
+		}
+		if ( "name" in obj ) {
+			const name = obj.name;
+
+			UIpatternroll.getBlocks().forEach( blc => {
+				if ( blc.dataset.pattern === id ) {
+					blc.querySelector( ".gsuiPatternroll-block-name" ).textContent = name;
+				}
+			} );
+			if ( id === DAW.get.patternKeysOpened() ) {
+				DOM.pianorollName.textContent = name;
+			}
+			if ( id === DAW.get.patternDrumsOpened() ) {
+				DOM.drumsName.textContent = name;
+			}
+		}
+	}
+}
+
+function UIupdatePatternsBPM( bpm ) {
+	const bps = bpm / 60;
+
+	UIpatternroll.getBlocks().forEach( ( elBlc, blcId ) => {
+		const blc = DAW.get.block( blcId ),
+			pat = DAW.get.pattern( blc.pattern ),
+			svg = elBlc._gsuiSVGform;
+
+		if ( svg && pat.type === "buffer" ) {
+			UIpatterns.svgForms.buffer.setSVGViewbox( svg, blc.offset, blc.duration, bps );
+		}
+	} );
+}
+
+const UIclock = new gsuiClock();
+
+function UIcontrolsInit() {
+	const sliderGain = new gsuiSlider(),
+		sliderTime = new gsuiSlider();
+
+	DOM.sliderTime = sliderTime;
+	DOM.play.onclick = UIcontrolsClickPlay;
+	DOM.stop.onclick = UIcontrolsClickStop;
+	DOM.headTempo.onclick = UIcontrolsClickTempo;
+	DOM.playToggle.onclick = UIcontrolsClickPlayToggle;
+	DOM.tempoBPMTap.onclick = UIcontrolsBPMTap;
+	DOM.headCmpInfo.onclick = UIcontrolsClickCmp;
+	DOM.headCmpSave.onclick = UIcompositionClickSave;
+	DOM.cmpsBtn.onmousedown =
+	DOM.undoMore.onmousedown = UIcontrolsDropdownBtnClick;
+	sliderGain.oninput = v => DAW.destination.setGain( v );
+	sliderGain.options( {
+		type: "linear-y", min: 0, max: 1, step: .01, scrollStep: .1, mousemoveSize: 150,
+		value: DAW.destination.getGain(),
+	} );
+	sliderTime.options( { type: "linear-x", step: .01 } );
+	sliderTime.oninput = UIcontrolsSliderTime_oninput;
+	sliderTime.onchange = UIcontrolsSliderTime_onchange;
+	sliderTime.oninputend = UIcontrolsSliderTime_oninputend;
+	sliderTime.oninputstart = UIcontrolsSliderTime_inputstart;
+	DOM.headGain.append( sliderGain.rootElement );
+	DOM.headCurrentTime.append( sliderTime.rootElement );
+	UIclock.rootElement.classList.add( "btnGroup", "btnMarge" );
+	DOM.headPlay.after( UIclock.rootElement );
+	UIclock.onchangeDisplay = mode => localStorage.setItem( "gsuiClock.display", mode );
+	UIclock.setDisplay( localStorage.getItem( "gsuiClock.display" ) || "second" );
+	UIclock.attached();
+	sliderGain.attached();
+	sliderTime.attached();
+}
+
+function UIcontrolsSliderTime_inputstart( beat ) {
+	DAW.cb.clockUpdate = null;
+	UIclock.setTime( beat );
+}
+function UIcontrolsSliderTime_oninputend( _beat ) {
+	DAW.cb.clockUpdate = UIcontrolsClockUpdate;
+}
+function UIcontrolsSliderTime_oninput( beat ) {
+	const beatRound = UIcontrolsGetFocusedGrid().timeline.previewCurrentTime( beat );
+
+	UIclock.setTime( beatRound );
+}
+function UIcontrolsSliderTime_onchange() {
+	const beat = UIcontrolsGetFocusedGrid().timeline.previewCurrentTime( false );
+
+	DAW.getFocusedObject().setCurrentTime( beat );
+}
+
+function UIcontrolsBPMTap() {
+	DOM.tempoBPM.value = Math.floor( gswaBPMTap.tap() );
+}
+
+function UIcontrolsClockUpdate( beat ) {
+	UIclock.setTime( beat );
+}
+
+function UIcontrolsCurrentTime( beat, focused ) {
+	UIcontrolsGetFocusedGrid( focused ).currentTime( beat );
+	DOM.sliderTime.setValue( beat );
+}
+
+function UIcontrolsClickCmp() {
+	gsuiPopup.prompt( "Composition's title", "", DAW.get.name(), "Rename" )
+		.then( name => DAW.callAction( "renameComposition", name ) );
+}
+
+function UIcontrolsClickPlay() {
+	DAW.togglePlay();
+}
+
+function UIcontrolsClickPlayToggle() {
+	DAW.getFocusedName() === "composition"
+		? DAW.pianorollFocus( "-f" )
+		: DAW.compositionFocus( "-f" );
+}
+
+function UIcontrolsClickStop() {
+	DAW.stop();
+	switch ( document.activeElement ) {
+		case UIdrums.rootElement: DAW.drumsFocus( "-f" ); break;
+		case UIpianoroll.rootElement: DAW.pianorollFocus( "-f" ); break;
+		case UIpatternroll.rootElement: DAW.compositionFocus( "-f" ); break;
+	}
+}
+
+function UIcontrolsGetFocusedGrid( focStr = DAW.getFocusedName() ) {
+	return focStr === "composition"
+		? UIpatternroll
+		: focStr === "drums"
+			? UIdrums
+			: UIpianoroll;
+}
+
+function UIcontrolsFocusOn( focStr, b ) {
+	if ( b ) {
+		const focObj = DAW.getFocusedObject(),
+			beat = focObj.getCurrentTime(),
+			duration = ( focObj === DAW.composition ? focObj.cmp : focObj ).duration,
+			grid = UIcontrolsGetFocusedGrid( focStr ),
+			onCmp = focStr === "composition";
+
+		DOM.playToggle.dataset.dir = onCmp ? "up" : "down";
+		DOM.sliderTime.options( { max: duration || DAW.get.beatsPerMeasure() } );
+		DOM.sliderTime.setValue( beat );
+		UIdrums.rootElement.classList.toggle( "selected", focStr === "drums" );
+		UIpianoroll.rootElement.classList.toggle( "selected", focStr === "pianoroll" );
+		UIpatternroll.rootElement.classList.toggle( "selected", onCmp );
+		grid.rootElement.focus();
+	}
+}
+
+function UIcontrolsDropdownBtnClick( e ) {
+	const foc = document.activeElement,
+		tar = e.currentTarget;
+
+	if ( foc === tar || foc === tar.nextElementSibling ) {
+		e.preventDefault();
+		foc.blur();
+	}
+}
+
+function UIcontrolsClickTempo() {
+	DOM.tempoBeatsPM.value = DAW.get.beatsPerMeasure();
+	DOM.tempoStepsPB.value = DAW.get.stepsPerBeat();
+	DOM.tempoBPM.value = DAW.get.bpm();
+	gswaBPMTap.reset();
+	gsuiPopup.custom( {
+		title: "Tempo",
+		element: DOM.tempoPopupContent,
+		submit( d ) {
+			DAW.callAction( "changeTempo", d.bpm, d.beatsPerMeasure, d.stepsPerBeat );
+		},
+	} );
+}
+
+const UIkeyboardFns = [];
+
+function UIkeyboardInit() {
+	UIkeyboardFns.push(
+		// ctrlOrAlt, alt, key, fn
+		[ true,  false, "o", UIopenPopupShow ],
+		[ true,  false, "s", UIcompositionClickSave ],
+		[ true,  true,  "n", UIcompositionClickNewLocal ],
+		[ true,  false, "z", DOM.undo.onclick ],
+		[ true,  false, "Z", DOM.redo.onclick ],
+		[ false, false, " ", () => {
+			DAW.isPlaying()
+				? DOM.stop.onclick()
+				: DOM.play.onclick();
+		} ],
+	);
+}
+
+function UIkeyboardUp( e ) {
+	UIpianorollKeyboardEvent( false, e );
+}
+
+function UIkeyboardDown( e ) {
+	if ( !UIkeyboardShortcuts( e ) && !e.ctrlKey && !e.altKey && !e.shiftKey ) {
+		UIpianorollKeyboardEvent( true, e );
+	}
+}
+
+function UIkeyboardShortcuts( e ) {
+	return UIkeyboardFns.some( ( [ ctrlOrAlt, alt, key, fn ] ) => {
+		if ( ( key === e.key ) &&
+			( !alt || e.altKey ) &&
+			( ctrlOrAlt === ( e.ctrlKey || e.altKey ) )
+		) {
+			fn();
+			e.preventDefault();
+			return true;
+		}
+	} );
+}
+
+function UIopenPopupShow() {
+	DOM.inputOpenFile.value =
+	DOM.inputOpenURL.value = "";
+	gsuiPopup.custom( {
+		title: "Open",
+		submit: UIopenPopupSubmit,
+		element: DOM.openPopupContent,
+	} );
+	return false;
+}
+
+function UIopenPopupSubmit( { url, file } ) {
+	if ( url || file[ 0 ] ) {
+		return ( url
+			? DAW.addCompositionByURL( url )
+			: DAW.addCompositionByBlob( file[ 0 ] )
+		).then( cmp => DAW.openComposition( "local", cmp.id ) );
+	}
+}
+
+const UIpianoroll = new gsuiPianoroll(),
+	UIkeys = UIpianoroll.uiKeys;
+
+function UIpianorollInit() {
+	const win = UIwindows.window( "piano" );
+
+	UIpianoroll.octaves( 1, 7 );
+	UIpianoroll.setPxPerBeat( 90 );
+	UIpianoroll.setFontSize( 20 );
+	UIpianoroll.onchange = obj => DAW.callAction( "changePatternKeys", DAW.get.patternKeysOpened(), obj, UIpianoroll.getDuration() );
+	UIpianoroll.onchangeLoop = UIpianorollOnChangeLoop;
+	UIpianoroll.onchangeCurrentTime = t => DAW.pianoroll.setCurrentTime( t );
+	UIpianoroll.rootElement.onfocus = () => DAW.pianorollFocus();
+	UIkeys.onkeydown = midi => DAW.pianoroll.liveKeydown( midi );
+	UIkeys.onkeyup = midi => DAW.pianoroll.liveKeyup( midi );
+	DOM.pianorollName.onclick = UIpianorollNameClick;
+	DOM.pianorollForbidden.classList.remove( "hidden" );
+	win.onresize =
+	win.onresizing = () => UIpianoroll.resized();
+	win.onfocusin = UIpianorollWindowFocusin;
+	win.append( UIpianoroll.rootElement );
+	UIpianoroll.attached();
+}
+
+function UIpianorollOnChangeLoop( looping, a, b ) {
+	looping
+		? DAW.pianoroll.setLoop( a, b )
+		: DAW.pianoroll.clearLoop();
+}
+
+function UIpianorollWindowFocusin( e ) {
+	if ( !UIpianoroll.rootElement.contains( e.target ) ) {
+		UIpianoroll.rootElement.focus();
+	}
+}
+
+function UIpianorollNameClick() {
+	const id = DAW.get.patternKeysOpened(),
+		name = DOM.pianorollName.textContent;
+
+	gsuiPopup.prompt( "Rename pattern", "", name, "Rename" )
+		.then( name => DAW.callAction( "renamePattern", id, name ) );
+}
+
+function UIpianorollKeyboardEvent( status, e ) {
+	const midi = UIkeys.getMidiKeyFromKeyboard( e );
+
+	if ( midi !== false ) {
+		status
+			? UIkeys.midiKeyDown( midi )
+			: UIkeys.midiKeyUp( midi );
+		return true;
+	}
+}
+
+function UIaboutPopupInit() {
+	DOM.helpAbout.onclick = UIaboutPopupShow;
+	DOM.versionCheck.onclick = UIaboutPopupVersionCheck;
+}
+
+function UIaboutPopupShow() {
+	gsuiPopup.custom( {
+		title: "About",
+		element: DOM.aboutPopupContent,
+	} );
+	return false;
+}
+
+function UIaboutPopupVersionCheck() {
+	const dt = DOM.versionIcon.dataset;
+
+	dt.icon = "none";
+	dt.spin = "on";
+	fetch( `https://gridsound.com/daw/VERSION?${ Math.random() }` )
+		.then( res => res.text(), GSUtils.noop )
+		.then( res => {
+			dt.spin = "";
+			dt.icon = res === VERSION ? "check" : "warning";
+		} );
+	return false;
+}
+
+const UIpatternroll = new gsuiPatternroll();
+
+function UIpatternrollInit() {
+	const win = UIwindows.window( "main" );
+
+	UIpatternroll.setFontSize( 32 );
+	UIpatternroll.setPxPerBeat( 40 );
+	UIpatternroll.onchangeCurrentTime = t => DAW.composition.setCurrentTime( t );
+	UIpatternroll.rootElement.onfocus = () => DAW.compositionFocus();
+	UIpatternroll.onchange = UIpatternrollOnChange;
+	UIpatternroll.onaddBlock = UIpatternrollOnAddBlock;
+	UIpatternroll.oneditBlock = UIpatternrollOnEditBlock;
+	UIpatternroll.onchangeLoop = UIpatternrollOnChangeLoop;
+	win.onresize =
+	win.onresizing = () => UIpatternroll.resized();
+	win.onfocusin = UIpatternrollWindowFocusin;
+	win.append( UIpatternroll.rootElement );
+	UIpatternroll.attached();
+}
+
+function UIpatternrollWindowFocusin( e ) {
+	if ( !UIpatternroll.rootElement.contains( e.target ) ) {
+		UIpatternroll.rootElement.focus();
+	}
+}
+
+function UIpatternrollOnChange( obj ) {
+	const dur = UIpatternroll.getBlocks().size && UIpatternroll.getDuration();
+
+	if ( dur !== DAW.get.duration() ) {
+		obj.duration = dur;
+	}
+	DAW.callAction( "changeTracksAndBlocks", obj );
+}
+
+function UIpatternrollOnChangeLoop( looping, a, b ) {
+	DAW.callAction( "changeLoop", looping && a, looping && b );
+}
+
+function UIpatternrollOnEditBlock( _id, obj, blc ) {
+	if ( blc._gsuiSVGform ) {
+		const pat = DAW.get.pattern( obj.pattern );
+
+		UIpatterns.svgForms[ pat.type ].setSVGViewbox( blc._gsuiSVGform, obj.offset, obj.duration, DAW.get.bpm() / 60 );
+	}
+}
+
+function UIpatternrollOnAddBlock( id, obj, blc ) {
+	const pat = DAW.get.pattern( obj.pattern ),
+		SVGs = UIpatterns.svgForms[ pat.type ],
+		svg = SVGs.createSVG( obj.pattern );
+
+	blc._gsuiSVGform = svg;
+	blc.children[ 3 ].append( svg );
+	SVGs.setSVGViewbox( svg, obj.offset, obj.duration, DAW.get.bpm() / 60 );
+	blc.ondblclick = () => DAW.callAction( "openPattern", obj.pattern );
+	blc.querySelector( ".gsuiPatternroll-block-name" ).textContent = pat.name;
+}
+
+function UIrenderPopupInit() {
+	DOM.headExport.onclick = UIrenderPopupShow;
+	DOM.renderBtn.onclick = UIrenderPopupRender;
+}
+
+function UIrenderPopupShow() {
+	DOM.renderProgress.value = 0;
+	DOM.renderBtn.dataset.status = "0";
+	DOM.renderBtn.href = "";
+	gsuiPopup.custom( {
+		ok: "Close",
+		title: "Render",
+		element: DOM.renderPopupContent,
+	} ).then( () => DAW.abortWAVExport() );
+	return false;
+}
+
+function UIrenderPopupRender() {
+	const a = DOM.renderBtn,
+		d = a.dataset;
+
+	if ( d.status === "2" ) {
+		return;
+	} else if ( d.status === "0" ) {
+		const dur = DAW.get.duration() * 60 / DAW.get.bpm();
+
+		d.status = "1";
+		UIrenderPopupRender._intervalId = setInterval( () => {
+			DOM.renderProgress.value = DAW.ctx.currentTime / dur;
+		}, 100 );
+		DAW.exportCompositionToWAV().then( obj => {
+			clearInterval( UIrenderPopupRender._intervalId );
+			DOM.renderProgress.value = 1;
+			d.status = "2";
+			a.href = obj.url;
+			a.download = obj.name;
+		} );
+	}
+	return false;
+}
+
+const UImainAnalyser = new gsuiSpectrum();
+
+function UImainAnalyserInit() {
+	UImainAnalyser.setCanvas( DOM.headAnalyser );
+	UImainAnalyser.setResolution( 140 );
+}
+
+const UIcompositions = Object.seal( {
+	cloud: new Map(),
+	local: new Map(),
+	get( cmp ) {
+		return this[ cmp.options.saveMode ].get( cmp.id );
+	},
+	set( cmp, html ) {
+		this[ cmp.options.saveMode ].set( cmp.id, html );
+	},
+	delete( cmp ) {
+		this[ cmp.options.saveMode ].delete( cmp.id );
+	},
+} );
+
+function UIcompositionsInit() {
+	DOM.cmpsCloudList.onclick =
+	DOM.cmpsLocalList.onclick = UIcompositionClick;
+	DOM.cloudNewCmp.onclick = UIcompositionClickNewCloud;
+	DOM.localNewCmp.onclick = UIcompositionClickNewLocal;
+	DOM.localOpenCmp.onclick = UIopenPopupShow;
+	DOM.cmpsCloudList.ondragstart = UIcompositionDragstart.bind( null, "cloud" );
+	DOM.cmpsLocalList.ondragstart = UIcompositionDragstart.bind( null, "local" );
+	DOM.cmpsCloudList.ondrop = UIcompositionCloudDrop;
+	DOM.cmpsLocalList.ondrop = UIcompositionLocalDrop;
+}
+
+function UIcompositionDragstart( from, e ) {
+	const elCmp = e.target.closest( ".cmp" );
+
+	e.dataTransfer.setData( "text/plain", `${ from }:${ elCmp.dataset.id }` );
+}
+
+function UIcompositionDrop( from, to, e ) {
+	const [ saveMode, id ] = e.dataTransfer.getData( "text/plain" ).split( ":" );
+
+	if ( saveMode === from ) {
+		const cmpFrom = DAW.get.composition( from, id ),
+			cmpTo = DAW.get.composition( to, id );
+
+		return !cmpTo
+			? Promise.resolve( cmpFrom )
+			: gsuiPopup.confirm( "Warning",
+				"Are you sure you want to overwrite " +
+				`the <b>${ to }</b> composition <i>${ cmpTo.name || "Untitled" }</i>&nbsp;?` )
+			.then( b => {
+				if ( b ) {
+					return cmpFrom;
+				}
+				throw undefined;
+			} );
+	}
+	return Promise.reject();
+}
+
+function UIcompositionLocalDrop( e ) {
+	UIcompositionDrop( "cloud", "local", e )
+		.then( cmp => DAW.addComposition( cmp, { saveMode: "local" } ) )
+		.then( cmp => DAWCore.LocalStorage.put( cmp.id, cmp ) );
+}
+
+function UIcompositionCloudDrop( e ) {
+	if ( gsapiClient.user.id ) {
+		UIcompositionDrop( "local", "cloud", e )
+			.then( cmp => UIauthSaveComposition( cmp ) )
+			.then( cmp => DAW.addComposition( cmp, { saveMode: "cloud" } ) );
+	} else {
+		gsuiPopup.alert( "Error",
+			"You need to be connected to your account before uploading your composition" );
+	}
+}
+
+function UIcompositionClick( e ) {
+	const cmp = e.target.closest( ".cmp" );
+
+	if ( cmp ) {
+		const id = cmp.dataset.id,
+			saveMode = DOM.cmpsLocalList.contains( cmp ) ? "local" : "cloud";
+
+		switch ( e.target.dataset.action ) {
+			case "save": UIcompositionClickSave(); break;
+			case "open": UIcompositionClickOpen( saveMode, id ); e.preventDefault(); break;
+			case "json": UIcompositionClickJSONExport( saveMode, id, e ); break;
+			case "delete": UIcompositionClickDelete( saveMode, id ); break;
+		}
+	}
+}
+
+function UIcompositionBeforeUnload() {
+	if ( DAW.compositionNeedSave() ) {
+		return "Data unsaved";
+	}
+}
+
+function UIcompositionOpened( cmp ) {
+	const html = UIcompositions.get( cmp ),
+		par = html.root.parentNode;
+
+	html.root.classList.add( "cmp-loaded" );
+	par.prepend( html.root );
+	par.scrollTop = 0;
+	DOM.headCmp.dataset.saveMode =
+	DOM.headCmpIcon.dataset.icon = cmp.options.saveMode;
+	DOM.headCmpSave.dataset.icon = cmp.options.saveMode === "local" ? "save" : "upload";
+	UIpatterns._uiPatterns.expandSynth( cmp.synthOpened, true );
+	UIeffectsSelectChan( "main" );
+	UItitle( cmp.name );
+}
+
+function UIcompositionLoading( cmp, loading ) {
+	DOM.headCmpSave.dataset.spin =
+	UIcompositions.get( cmp ).save.dataset.spin = loading ? "on" : "";
+}
+
+function UIcompositionSavedStatus( cmp, saved ) {
+	DOM.headCmp.classList.toggle( "cmp-saved", saved );
+	UIcompositions.get( cmp ).root.classList.toggle( "cmp-saved", saved );
+	UItitle( cmp.name );
+}
+
+function UIcompositionDeleted( cmp ) {
+	const html = UIcompositions.get( cmp );
+
+	if ( html ) {
+		html.root.remove();
+		UIcompositions.delete( cmp );
+	}
+}
+
+function UIcompositionAdded( cmp ) {
+	const html = UIcompositions.get( cmp );
+
+	if ( html ) {
+		UIcompositionSetInfo( html, cmp );
+	} else {
+		const root = DOM.cmp.cloneNode( true ),
+			local = cmp.options.saveMode === "local",
+			html = {
+				root,
+				bpm: root.querySelector( ".cmp-bpm" ),
+				name: root.querySelector( ".cmp-name" ),
+				save: root.querySelector( ".cmp-save" ),
+				duration: root.querySelector( ".cmp-duration" ),
+			};
+
+		root.dataset.id = cmp.id;
+		UIcompositionSetInfo( html, cmp );
+		UIcompositions.set( cmp, html );
+		html.save.dataset.icon = local ? "save" : "upload";
+		( local
+			? DOM.cmpsLocalList
+			: DOM.cmpsCloudList ).append( root );
+	}
+}
+
+function UIcompositionSetInfo( html, cmp ) {
+	const [ min, sec ] = GSUtils.parseBeatsToSeconds( cmp.duration, cmp.bpm );
+
+	html.bpm.textContent = cmp.bpm;
+	html.name.textContent = cmp.name;
+	html.duration.textContent = `${ min }:${ sec }`;
+}
+
+function UIcompositionClosed( cmp ) {
+	UIcompositionChanged( {
+		bpm: cmp.bpm,
+		name: cmp.name,
+		duration: cmp.duration,
+	}, {} );
+	UIcompositions.get( cmp ).root.classList.remove( "cmp-loaded" );
+	UIdrums.clear();
+	UIdrums.loop( false );
+	// UIdrums.setFontSize( 32 );
+	// UIdrums.setPxPerBeat( 40 );
+	UIeffects.clear();
+	UIsynth.clear();
+	UImixer.clear();
+	UIpatternroll.empty();
+	UIpatternroll.loop( false );
+	UIpatternroll.setFontSize( 32 );
+	UIpatternroll.setPxPerBeat( 40 );
+	UIpianoroll.empty();
+	UIpianoroll.loop( false );
+	DOM.drumsName.textContent =
+	DOM.synthName.textContent =
+	DOM.pianorollName.textContent = "";
+	DOM.pianorollForbidden.classList.add( "hidden" );
+	UIpatterns.clear();
+}
+
+function UIcompositionClickNewLocal() {
+	( !DAW.compositionNeedSave()
+		? DAW.addNewComposition()
+		: gsuiPopup.confirm( "Warning", "Are you sure you want to discard unsaved works" )
+			.then( b => b && DAW.addNewComposition() )
+	).then( cmp => cmp && DAW.openComposition( "local", cmp.id ) );
+	return false;
+}
+
+function UIcompositionClickNewCloud() {
+	if ( !gsapiClient.user.id ) {
+		gsuiPopup.alert( "Error",
+			"You can not create a new composition in the <b>cloud</b><br/>without being connected" );
+	} else {
+		const saveMode = "cloud",
+			opt = { saveMode };
+
+		( !DAW.compositionNeedSave()
+			? DAW.addNewComposition( opt )
+			: gsuiPopup.confirm( "Warning", "Are you sure you want to discard unsaved works" )
+				.then( b => b && DAW.addNewComposition( opt ) )
+		).then( cmp => cmp && DAW.openComposition( saveMode, cmp.id ) );
+	}
+	return false;
+}
+
+function UIcompositionClickDelete( saveMode, id ) {
+	const html = UIcompositions[ saveMode ].get( id ),
+		name = html.name.textContent;
+
+	gsuiPopup.confirm( "Warning",
+		`Are you sure you want to delete "${ name }" ? (no undo possible)`,
+		"Delete"
+	).then( b => {
+		if ( b ) {
+			( saveMode === "cloud"
+			? gsapiClient.deleteComposition( id )
+			: Promise.resolve() )
+				.catch( err => {
+					if ( err.code !== 404 ) {
+						gsuiPopup.alert( `Error ${ err.code }`,
+							"An error happened while deleting " +
+							"your composition&nbsp;:<br/>" +
+							`<code>${ err.msg || err }</code>` );
+						throw err;
+					}
+				} )
+				.then( () => {
+					if ( id === DAW.get.id() ) {
+						for ( let next = html.root.nextElementSibling;
+							next;
+							next = next.nextElementSibling
+						) {
+							if ( next.dataset.id ) {
+								DAW.openComposition( saveMode, next.dataset.id );
+								break;
+							}
+						}
+					}
+					DAW.deleteComposition( saveMode, id );
+				} );
+		}
+	} );
+}
+
+function UIcompositionClickJSONExport( saveMode, id, e ) {
+	const json = DAW.exportCompositionToJSON( saveMode, id );
+
+	e.target.href = json.url;
+	e.target.download = json.name;
+}
+
+function UIcompositionClickOpen( saveMode, id ) {
+	if ( DAW.compositionNeedSave() ) {
+		gsuiPopup.confirm( "Warning",
+			"Are you sure you want to discard unsaved works"
+		).then( ok => ok && DAW.openComposition( saveMode, id ) );
+	} else {
+		DAW.openComposition( saveMode, id );
+	}
+	return false;
+}
+
+function UIcompositionClickSave() {
+	if ( document.cookie.indexOf( "cookieAccepted" ) > -1 ) {
+		DAW.saveComposition();
+	} else {
+		gsuiPopup.alert( "Error",
+			"You have to accept our cookies before saving locally your composition." );
+	}
+}
+
+function UIsettingsPopupInit() {
+	DOM.headSettings.onclick = UIsettingsPopupShow;
+	DOM.settingsUIRateManual.oninput = UIsettingsPopupUIRateOninput;
+	DAW.setLoopRate( UIsettingsGetUIRate() );
+	UIwindows.lowGraphics( UIsettingsGetLowGraphicsValue() );
+}
+
+function UIsettingsPopupUIRateOninput( e ) {
+	DOM.settingsUIRateManualFps.textContent = DOM.settingsUIRateManual.value.padStart( 2, "0" );
+	if ( e ) {
+		DOM.settingsUIRateModeManual.checked = true;
+	}
+}
+
+function UIsettingsGetLowGraphicsValue() {
+	return !!+( localStorage.getItem( "gsuiWindows.lowGraphics" ) || "0" );
+}
+
+function UIsettingsGetUIRate() {
+	return +localStorage.getItem( "uiRefreshRate" ) || 60;
+}
+
+function UIsettingsPopupShow() {
+	const uiRefreshRate = UIsettingsGetUIRate();
+
+	( uiRefreshRate >= 60
+		? DOM.settingsUIRateModeAuto
+		: DOM.settingsUIRateModeManual ).checked = true;
+	DOM.settingsUIRateManual.value = uiRefreshRate;
+	DOM.settingsWindowsMode.checked = !UIsettingsGetLowGraphicsValue();
+	UIsettingsPopupUIRateOninput();
+	gsuiPopup.custom( {
+		title: "Settings",
+		submit: UIsettingsPopupSubmit,
+		element: DOM.settingsPopupContent,
+	} ).then();
+}
+
+function UIsettingsPopupSubmit( form ) {
+	const rate = form.UIRateMode === "auto" ? 60 : form.UIRateManual,
+		lowGraphics = !form.windowsDirectMode;
+
+	DAW.setLoopRate( rate );
+	UIwindows.lowGraphics( lowGraphics );
+	localStorage.setItem( "uiRefreshRate", rate );
+	localStorage.setItem( "gsuiWindows.lowGraphics", +lowGraphics );
+}
+
+function UIshortcutsPopupInit() {
+	DOM.helpKeyboardShortcuts.onclick = UIshortcutsPopupShow;
+}
+
+function UIshortcutsPopupShow() {
+	gsuiPopup.custom( {
+		title: "Keyboard / mouse shortcuts",
+		element: DOM.shortcutsPopupContent,
+	} );
+	return false;
+}
+
+function UIcompositionChanged( obj, prevObj ) {
+	console.log( "change", obj );
+	UIpatterns.change( obj );
+	UIsynth.change( obj );
+	UIdrums.change( obj );
+	UIeffects.change( obj );
+	UImixer.change( obj );
+	UIcompositionChanged.fn.forEach( ( fn, attrs ) => {
+		if ( attrs.some( attr => attr in obj ) ) {
+			fn( obj, prevObj );
+		}
+	} );
+}
+
+UIcompositionChanged.fn = new Map( [
+	[ [ "channels" ], function( obj ) {
+		const synOpenedChan = obj.channels[ DAW.get.synth( DAW.get.synthOpened() ).dest ],
+			mixerSelectedChan = obj.channels[ UIeffects.getDestFilter() ];
+
+		if ( synOpenedChan && "name" in synOpenedChan ) {
+			DOM.synthChannelBtnText.textContent = synOpenedChan.name;
+		}
+		if ( mixerSelectedChan && "name" in mixerSelectedChan ) {
+			UIeffectsRenameChan( mixerSelectedChan.name );
+		}
+	} ],
+	[ [ "synths" ], function( obj ) {
+		const synOpened = obj.synths[ DAW.get.synthOpened() ];
+
+		if ( synOpened ) {
+			UIsynthChange( synOpened );
+		}
+	} ],
+	[ [ "tracks", "blocks" ], function( obj ) {
+		GSUtils.diffAssign( UIpatternroll.data.tracks, obj.tracks );
+		GSUtils.diffAssign( UIpatternroll.data.blocks, obj.blocks );
+	} ],
+	[ [ "patterns" ], function( obj ) {
+		Object.entries( obj.patterns ).forEach( kv => UIupdatePattern( ...kv ) );
+	} ],
+	[ [ "loopA", "loopB" ], function() {
+		UIpatternroll.loop(
+			DAW.get.loopA(),
+			DAW.get.loopB() );
+	} ],
+	[ [ "beatsPerMeasure", "stepsPerBeat" ], function() {
+		const bPM = DAW.get.beatsPerMeasure(),
+			sPB = DAW.get.stepsPerBeat();
+
+		UIclock.setStepsPerBeat( sPB );
+		UIpatternroll.timeSignature( bPM, sPB );
+		UIpianoroll.timeSignature( bPM, sPB );
+		DOM.beatsPerMeasure.textContent = bPM;
+		DOM.stepsPerBeat.textContent = sPB;
+	} ],
+	[ [ "bpm" ], function( { bpm } ) {
+		UIclock.setBPM( bpm );
+		DOM.bpm.textContent =
+		UIcompositions.get( DAW.get.cmp() ).bpm.textContent = bpm;
+		UIupdatePatternsBPM( bpm );
+	} ],
+	[ [ "name" ], function( { name } ) {
+		UItitle( name );
+		DOM.headCmpName.textContent =
+		UIcompositions.get( DAW.get.cmp() ).name.textContent = name;
+	} ],
+	[ [ "duration" ], function( { duration } ) {
+		const [ min, sec ] = GSUtils.parseBeatsToSeconds( duration, DAW.get.bpm() );
+
+		if ( DAW.getFocusedName() === "composition" ) {
+			DOM.sliderTime.options( { max: duration } );
+		}
+		DOM.headCmpDur.textContent =
+		UIcompositions.get( DAW.get.cmp() ).duration.textContent = `${ min }:${ sec }`;
+	} ],
+	[ [ "keys" ], function( { keys } ) {
+		const patOpened = DAW.get.pattern( DAW.get.patternKeysOpened() );
+
+		if ( patOpened && patOpened.keys in keys ) {
+			GSUtils.diffAssign( UIpianoroll.data, keys[ patOpened.keys ] );
+		}
+	} ],
+	[ [ "patternDrumsOpened" ], function( obj ) {
+		if ( obj.patternDrumsOpened ) {
+			const pat = DAW.get.pattern( obj.patternDrumsOpened );
+
+			DOM.drumsName.textContent = pat.name;
+			UIwindows.window( "drums" ).open();
+			if ( DAW.getFocusedName() === "drums" ) {
+				DOM.sliderTime.options( { max: pat.duration } );
+			}
+		} else {
+			DOM.drumsName.textContent = "";
+		}
+	} ],
+	[ [ "synthOpened" ], function( obj ) {
+		if ( obj.synthOpened ) {
+			const syn = DAW.get.synth( obj.synthOpened );
+
+			DOM.synthName.textContent = syn.name;
+			DOM.synthChannelBtn.onclick = UImixerOpenChanPopup.bind( null, obj.synthOpened );
+			UIwindows.window( "synth" ).open();
+		} else {
+			DOM.synthName.textContent = "";
+			DOM.synthChannelBtn.onclick = null;
+		}
+	} ],
+	[ [ "patternKeysOpened" ], function( { patternKeysOpened } ) {
+		UIpianoroll.empty();
+		if ( patternKeysOpened ) {
+			const pat = DAW.get.pattern( patternKeysOpened );
+
+			DOM.pianorollName.textContent = pat.name;
+			DOM.pianorollForbidden.classList.add( "hidden" );
+			GSUtils.diffAssign( UIpianoroll.data, DAW.get.keys( pat.keys ) );
+			UIpianoroll.resetKey();
+			UIpianoroll.scrollToKeys();
+			if ( DAW.getFocusedName() === "pianoroll" ) {
+				DOM.sliderTime.options( { max: pat.duration } );
+			}
+			UIwindows.window( "piano" ).open();
+		} else {
+			DOM.pianorollName.textContent = "";
+			DOM.pianorollForbidden.classList.remove( "hidden" );
+			UIpianoroll.setPxPerBeat( 90 );
+		}
+	} ],
+] );
+
+UIloading().then( UIrun ).then( UIloaded );
+
+function UIrun() {
+	const DAW = new DAWCore(),
+		hash = new Map( location.hash
+			.substr( 1 )
+			.split( "&" )
+			.map( kv => kv.split( "=" ) )
+		);
+
+	gswaPeriodicWaves.list.forEach( ( w, name ) => {
+		gsuiPeriodicWave.addWave( name, w.real, w.imag );
+	} );
+
+	window.DAW = DAW;
+	window.VERSION = "0.30.0";
+
+	window.UIdrums = new GSDrums();
+	window.UIeffects = new GSEffects();
+	window.UImixer = new GSMixer();
+	window.UIpatterns = new GSPatterns();
+	window.UIsynth = new GSSynth();
+
+	UIdomInit();
+	UIwindowsInit();
+
+	UIauthInit();
+	UIdrumsInit();
+	UImixerInit();
+	UIsynthInit();
+	UIcookieInit();
+	UIeffectsInit();
+	UIhistoryInit();
+	UIcontrolsInit();
+	UIkeyboardInit();
+	UIpatternsInit();
+	UIpianorollInit();
+	UIaboutPopupInit();
+	UIpatternrollInit();
+	UIrenderPopupInit();
+	UImainAnalyserInit();
+	UIcompositionsInit();
+	UIsettingsPopupInit();
+	UIshortcutsPopupInit();
+
+	window.onblur = () => UIkeys.midiReleaseAllKeys();
+	window.onkeyup = UIkeyboardUp;
+	window.onkeydown = UIkeyboardDown;
+	window.onbeforeunload = UIcompositionBeforeUnload;
+	document.body.ondrop = UIdrop;
+	document.body.ondragover = () => false;
+	document.addEventListener( "wheel", e => {
+		if ( e.ctrlKey ) {
+			e.preventDefault();
+		}
+	}, { passive: false } );
+	document.addEventListener( "drop", e => {
+		DAW.dropAudioFiles( e.dataTransfer.files );
+	} );
+
+	DAW.cb.focusOn = UIcontrolsFocusOn;
+	DAW.cb.currentTime = UIcontrolsCurrentTime;
+	DAW.cb.clockUpdate = UIcontrolsClockUpdate;
+	DAW.cb.buffersLoaded = UIpatternsBuffersLoaded;
+	DAW.cb.compositionAdded = UIcompositionAdded;
+	DAW.cb.compositionOpened = UIcompositionOpened;
+	DAW.cb.compositionClosed = UIcompositionClosed;
+	DAW.cb.compositionChanged = UIcompositionChanged;
+	DAW.cb.compositionDeleted = UIcompositionDeleted;
+	DAW.cb.compositionLoading = UIcompositionLoading;
+	DAW.cb.compositionSavedStatus = UIcompositionSavedStatus;
+	DAW.cb.compositionSavingPromise = UIauthSaveComposition;
+	DAW.cb.onstartdrum = rowId => UIdrums.onstartdrum( rowId );
+	DAW.cb.onstopdrumrow = rowId => UIdrums.onstopdrumrow( rowId );
+	DAW.cb.analyserFilled = UImainAnalyser.draw.bind( UImainAnalyser );
+	DAW.cb.channelAnalyserFilled = UImixer.updateAudioData.bind( UImixer );
+	DAW.cb.pause =
+	DAW.cb.stop = () => DOM.play.dataset.icon = "play";
+	DAW.cb.play = () => DOM.play.dataset.icon = "pause";
+
+	DOM.versionNum.textContent =
+	DOM.headVersionNum.textContent = window.VERSION;
+
+	DOM.winBtnsMap.forEach( ( btn, id ) => id !== "effects" && id !== "drums" && btn.click() );
+
+	UIauthGetMe();
+	DAW.addCompositionsFromLocalStorage();
+
+	if ( !hash.has( "cmp" ) ) {
+		UIcompositionClickNewLocal();
+	} else {
+		DAW.addCompositionByURL( hash.get( "cmp" ) )
+			.catch( e => {
+				console.error( e );
+				return DAW.addNewComposition();
+			} )
+			.then( cmp => DAW.openComposition( "local", cmp.id ) );
+		location.hash = "";
+	}
+}
+</script>
+</body>
+</html>
